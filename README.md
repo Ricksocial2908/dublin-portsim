@@ -4,7 +4,8 @@ A Dublin Port themed clone of [FineEnvs/PortSimEnv](https://huggingface.co/space
 
 The original environment is a Python OpenEnv + 3D viewer for **real 2024 Port of Barcelona container calls**. This project keeps the same planning rules and reward, but the geography, terminals, vessel mix and tidal constraints are those of **Dublin Port**. The interactive episode runs entirely in the browser (static web app). A Python package in `python/` implements the same model for agents and tests.
 
-Live app: see the repository README once deployed, or the Vercel URL attached to this project.
+Live app: https://dublin-portsim.vercel.app  
+Source: https://github.com/Ricksocial2908/dublin-portsim
 
 ## How to play
 
