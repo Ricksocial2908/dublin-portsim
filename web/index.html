@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dublin PortSim · Calafort Átha Cliath</title>
+  <meta name="description" content="Dock planning for Dublin Port: a Dublin-themed clone of FineEnvs/PortSimEnv." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%230b1218' width='32' height='32'/><text y='23' x='3' font-size='18'>🚢</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@0,500;1,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <div class="mark" aria-hidden="true">⚓</div>
+      <div>
+        <h1>Dublin PortSim</h1>
+        <p class="irish">Calafort Átha Cliath · dock planning</p>
+      </div>
+    </div>
+    <nav class="top-nav">
+      <button type="button" id="btn-about">How it works</button>
+      <button type="button" id="btn-sources">Sources</button>
+      <a href="https://huggingface.co/spaces/FineEnvs/PortSimEnv" target="_blank" rel="noopener">Original Space</a>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <aside class="side">
+      <label class="field">
+        <span>Scenario</span>
+        <select id="scenario"></select>
+      </label>
+      <p class="blurb" id="blurb"></p>
+      <div class="meta" id="meta"></div>
+
+      <div class="score" id="score">
+        <div class="score-k">Draft plan</div>
+        <div class="score-v" id="score-line">Place every ship, then check or submit.</div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="primary" id="btn-check">Check plan</button>
+        <button type="button" class="accent" id="btn-submit">Submit plan</button>
+        <button type="button" id="btn-reset">Reset to published</button>
+        <button type="button" id="btn-naive">Apply naive re-plan</button>
+      </div>
+
+      <section class="notices">
+        <h2>Notices</h2>
+        <ul id="notices"></ul>
+      </section>
+
+      <section class="issues" id="issues-wrap" hidden>
+        <h2>Violations</h2>
+        <ul id="issues"></ul>
+      </section>
+    </aside>
+
+    <section class="stage">
+      <div class="stage-bar">
+        <div class="clock" id="clock">Mon 00:00</div>
+        <input type="range" id="time" min="0" max="168" value="0" />
+        <button type="button" id="btn-play" aria-label="Play or pause">Play</button>
+        <label class="speed">Speed
+          <select id="speed">
+            <option value="1">1×</option>
+            <option value="4" selected>4×</option>
+            <option value="12">12×</option>
+            <option value="48">48×</option>
+          </select>
+        </label>
+        <div class="tide" id="tide">Tide — m CD</div>
+      </div>
+      <canvas id="map" width="1400" height="640" aria-label="Map of Dublin Port"></canvas>
+      <div class="legend" id="legend"></div>
+    </section>
+  </main>
+
+  <section class="board">
+    <div class="board-head">
+      <h2>Berth chart</h2>
+      <p>Select a ship, then click a chart cell to berth it. Drag a block to move it in time. Scroll to pan.</p>
+    </div>
+    <div class="chart-wrap" id="chart-wrap"></div>
+  </section>
+
+  <section class="ships-panel">
+    <h2>Ships</h2>
+    <div class="table-wrap">
+      <table id="ships-table">
+        <thead></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p>Adapted from <a href="https://huggingface.co/spaces/FineEnvs/PortSimEnv">FineEnvs/PortSimEnv</a> (CC BY-SA 4.0). Not affiliated with Dublin Port Company or the ferry and terminal operators. Call lists are synthetic; depths, UKC and tidal levels are from official notices cited in Sources.</p>
+  </footer>
+
+  <dialog id="dlg-about" class="dlg">
+    <form method="dialog">
+      <h2>How it works</h2>
+      <p>This is a Dublin-themed clone of PortSimEnv, an environment for planning who docks where and when (and with how many cranes) after the published plan has broken.</p>
+      <ul>
+        <li>A plan entry is a ship, a berthing hour, a section (or named berth), and an optional crane count.</li>
+        <li>Ships may not overlap each other, closed sections, or a ship already alongside, and they cannot berth before they arrive.</li>
+        <li>On DFT tasks the three official Liebherr gantries are a crane pool. Hours alongside are <code>ceil(workload / cranes)</code>.</li>
+        <li>Gale notices and tidal windows block berthing and departure. A ship that finishes cargo inside a window waits alongside until it ends. Transit needs official depth + tide − 1.0 m UKC; lying alongside needs survey + tide − 0.5 m.</li>
+        <li>Cost is section-hours of delay past each due time, plus 5 for moving a ship off its planned berth. An infeasible plan scores 0.2 × the share of clean ships. A feasible plan scores 0.2 + 0.8 × exp(−gap / 0.5) against a heuristic best-known cost, not a proven CP-SAT optimum.</li>
+      </ul>
+      <button value="ok">Close</button>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-sources" class="dlg">
+    <form method="dialog">
+      <h2>Sources and assumptions</h2>
+      <p>Verified facts:</p>
+      <ul>
+        <li>Dublin Port Notice to Mariners 12.4, 8 August 2025 (Harbour Master Captain Michael McKenna): berth lengths, design/survey/approach depths, channel reaches, UKC 1.0 m manoeuvring / 0.5 m alongside.</li>
+        <li>Dublin Port Tide Tables 2026, North Wall (Poltips-4, National Oceanography Centre): HAT 4.50, MHWS 4.10, MHWN 3.40, MSL 2.41, MLWN 1.50, MLWS 0.70, LAT −0.10 m CD; semi-diurnal.</li>
+        <li>Tom Clarke (East Link) Bridge notice: 31.5 m opening span, 6.35 m clearance above CD (1.85 m at HAT).</li>
+        <li>Operator and berth snapshot: Irish Ferries 49 &amp; 51A, Stena 51, DFT 50A/50N/50S (ICG: 480 m, three Liebherr 40 t gantries), MTL 41–45, oil berths OB1–OB4, Alexandra Basin RoRo jetty 26/27 (Harbour Master 2026: ~195 m Liverpool ferries, design 240 m).</li>
+        <li>Published ferry dimensions: Ulysses 209 m / 6.4 m; W.B. Yeats 194.8 m / 6.7 m; Stena Estrid 215 m; Stena Adventurer 210.8 m / 6.3 m.</li>
+      </ul>
+      <p>Assumptions (not official schedules): synthetic weekly calls; 40 m planning sections; 20 m overhang allowance on named RoRo berths; DFT crane rate 25 moves/hour; passenger RoRo 2 h / freight RoRo 6 h handling; harmonic tide (12.42 h) rather than a named day’s official prediction; MTL 41–45 planned as one continuous face; heuristic best-known costs. Full notes are in the project README.</p>
+      <button value="ok">Close</button>
+    </form>
+  </dialog>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

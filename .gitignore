@@ -1,0 +1,11 @@
+.vercel
+__pycache__/
+*.pyc
+.python-version
+.venv/
+original/
+notes/
+env/
+src/
+.DS_Store
+*.pdf
