@@ -1,0 +1,172 @@
+{
+  "naive_plan": [
+    {
+      "ship": 4,
+      "berth_hour": 4,
+      "section": 1
+    },
+    {
+      "ship": 5,
+      "berth_hour": 28,
+      "section": 1
+    },
+    {
+      "ship": 7,
+      "berth_hour": 40,
+      "section": 1
+    },
+    {
+      "ship": 11,
+      "berth_hour": 70,
+      "section": 1
+    },
+    {
+      "ship": 14,
+      "berth_hour": 88,
+      "section": 1
+    },
+    {
+      "ship": 0,
+      "berth_hour": 5,
+      "section": 5
+    },
+    {
+      "ship": 2,
+      "berth_hour": 7,
+      "section": 9
+    },
+    {
+      "ship": 1,
+      "berth_hour": 15,
+      "section": 1
+    },
+    {
+      "ship": 3,
+      "berth_hour": 15,
+      "section": 6
+    },
+    {
+      "ship": 8,
+      "berth_hour": 64,
+      "section": 6
+    },
+    {
+      "ship": 6,
+      "berth_hour": 36,
+      "section": 11
+    },
+    {
+      "ship": 15,
+      "berth_hour": 48,
+      "section": 11
+    },
+    {
+      "ship": 9,
+      "berth_hour": 48,
+      "section": 6
+    },
+    {
+      "ship": 10,
+      "berth_hour": 57,
+      "section": 1
+    },
+    {
+      "ship": 12,
+      "berth_hour": 82,
+      "section": 6
+    },
+    {
+      "ship": 13,
+      "berth_hour": 96,
+      "section": 6
+    }
+  ],
+  "optimal_cost": 480,
+  "naive_cost": 480,
+  "unavoidable_cost": 60,
+  "heuristic": "naive + local search (not a proven CP-SAT optimum)",
+  "optimal_plan": [
+    {
+      "ship": 4,
+      "berth_hour": 4,
+      "section": 1
+    },
+    {
+      "ship": 5,
+      "berth_hour": 28,
+      "section": 1
+    },
+    {
+      "ship": 7,
+      "berth_hour": 40,
+      "section": 1
+    },
+    {
+      "ship": 11,
+      "berth_hour": 70,
+      "section": 1
+    },
+    {
+      "ship": 14,
+      "berth_hour": 88,
+      "section": 1
+    },
+    {
+      "ship": 0,
+      "berth_hour": 5,
+      "section": 5
+    },
+    {
+      "ship": 2,
+      "berth_hour": 7,
+      "section": 9
+    },
+    {
+      "ship": 1,
+      "berth_hour": 15,
+      "section": 1
+    },
+    {
+      "ship": 3,
+      "berth_hour": 15,
+      "section": 6
+    },
+    {
+      "ship": 8,
+      "berth_hour": 64,
+      "section": 6
+    },
+    {
+      "ship": 6,
+      "berth_hour": 36,
+      "section": 11
+    },
+    {
+      "ship": 15,
+      "berth_hour": 48,
+      "section": 11
+    },
+    {
+      "ship": 9,
+      "berth_hour": 48,
+      "section": 6
+    },
+    {
+      "ship": 10,
+      "berth_hour": 57,
+      "section": 1
+    },
+    {
+      "ship": 12,
+      "berth_hour": 82,
+      "section": 6
+    },
+    {
+      "ship": 13,
+      "berth_hour": 96,
+      "section": 6
+    }
+  ],
+  "proven_optimal": false,
+  "solver": "naive + local search (not a proven CP-SAT optimum)"
+}

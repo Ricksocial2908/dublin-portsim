@@ -1,0 +1,168 @@
+{
+  "naive_plan": [
+    {
+      "ship": 0,
+      "berth_hour": 2,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 1,
+      "berth_hour": 9,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 4,
+      "berth_hour": 28,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 5,
+      "berth_hour": 35,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 8,
+      "berth_hour": 60,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 10,
+      "berth_hour": 75,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 11,
+      "berth_hour": 86,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 3,
+      "berth_hour": 15,
+      "section": 1,
+      "cranes": 2
+    },
+    {
+      "ship": 6,
+      "berth_hour": 22,
+      "section": 1,
+      "cranes": 2
+    },
+    {
+      "ship": 2,
+      "berth_hour": 47,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 12,
+      "berth_hour": 65,
+      "section": 1,
+      "cranes": 2
+    },
+    {
+      "ship": 7,
+      "berth_hour": 96,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 9,
+      "berth_hour": 108,
+      "section": 5,
+      "cranes": 2
+    }
+  ],
+  "optimal_cost": 809,
+  "naive_cost": 817,
+  "unavoidable_cost": 66,
+  "heuristic": "naive + local search (not a proven CP-SAT optimum)",
+  "optimal_plan": [
+    {
+      "ship": 0,
+      "berth_hour": 2,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 1,
+      "berth_hour": 9,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 4,
+      "berth_hour": 28,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 5,
+      "berth_hour": 35,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 8,
+      "berth_hour": 60,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 10,
+      "berth_hour": 75,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 11,
+      "berth_hour": 89,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 3,
+      "berth_hour": 15,
+      "section": 1,
+      "cranes": 2
+    },
+    {
+      "ship": 6,
+      "berth_hour": 22,
+      "section": 1,
+      "cranes": 3
+    },
+    {
+      "ship": 2,
+      "berth_hour": 50,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 12,
+      "berth_hour": 65,
+      "section": 1,
+      "cranes": 2
+    },
+    {
+      "ship": 7,
+      "berth_hour": 96,
+      "section": 5,
+      "cranes": 2
+    },
+    {
+      "ship": 9,
+      "berth_hour": 108,
+      "section": 5,
+      "cranes": 2
+    }
+  ],
+  "proven_optimal": false,
+  "solver": "naive + local search (not a proven CP-SAT optimum)"
+}

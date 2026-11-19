@@ -1,0 +1,403 @@
+{
+  "task_id": "dub-dft-w12-busy-0",
+  "split": "test",
+  "quay": "50N",
+  "terminal": "Dublin Ferryport Terminals (DFT)",
+  "week": 12,
+  "difficulty": "busy",
+  "first_section": 1,
+  "last_section": 13,
+  "section_m": 40,
+  "ships": [
+    {
+      "id": 0,
+      "name": "Liffey Feeder",
+      "kind": "container",
+      "length_m": 168,
+      "draught_m": 8.4,
+      "from_port": "Rotterdam",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "b50a",
+        "b50n"
+      ],
+      "sections": 5,
+      "arrival": 2,
+      "handling": 4,
+      "planned_hour": 2,
+      "planned_section": 5,
+      "due": 6,
+      "workload": 7,
+      "min_cranes": 1,
+      "max_cranes": 3,
+      "std_cranes": 2
+    },
+    {
+      "id": 1,
+      "name": "Tolka Trader",
+      "kind": "container",
+      "length_m": 152,
+      "draught_m": 7.9,
+      "from_port": "Antwerp",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "b50a",
+        "b50n"
+      ],
+      "sections": 4,
+      "arrival": 9,
+      "handling": 6,
+      "planned_hour": 9,
+      "planned_section": 5,
+      "due": 15,
+      "workload": 11,
+      "min_cranes": 1,
+      "max_cranes": 3,
+      "std_cranes": 2
+    },
+    {
+      "id": 2,
+      "name": "Poolbeg Express",
+      "kind": "container",
+      "length_m": 189,
+      "draught_m": 8.6,
+      "from_port": "Liverpool",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "b50a",
+        "b50n"
+      ],
+      "sections": 5,
+      "arrival": 17,
+      "handling": 9,
+      "planned_hour": 17,
+      "planned_section": 5,
+      "due": 26,
+      "workload": 17,
+      "min_cranes": 1,
+      "max_cranes": 3,
+      "std_cranes": 2
+    },
+    {
+      "id": 3,
+      "name": "Howth Carrier",
+      "kind": "container",
+      "length_m": 147,
+      "draught_m": 7.5,
+      "from_port": "Greenock",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "b50a",
+        "b50n"
+      ],
+      "sections": 4,
+      "arrival": 13,
+      "handling": 7,
+      "planned_hour": 4,
+      "planned_section": 1,
+      "due": 11,
+      "workload": 14,
+      "min_cranes": 1,
+      "max_cranes": 3,
+      "std_cranes": 2
+    },
+    {
+      "id": 4,
+      "name": "Avoca Box",
+      "kind": "container",
+      "length_m": 172,
+      "draught_m": 8.2,
+      "from_port": "Zeebrugge",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "b50a",
+        "b50n"
+      ],
+      "sections": 5,
+      "arrival": 28,
+      "handling": 3,
+      "planned_hour": 28,
+      "planned_section": 5,
+      "due": 31,
+      "workload": 6,
+      "min_cranes": 1,
+      "max_cranes": 3,
+      "std_cranes": 2
+    },
+    {
+      "id": 5,
+      "name": "Dodder Bridge",
+      "kind": "container",
+      "length_m": 210,
+      "draught_m": 8.9,
+      "from_port": "Rotterdam",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "b50a",
+        "b50n"
+      ],
+      "sections": 6,
+      "arrival": 35,
+      "handling": 10,
+      "planned_hour": 35,
+      "planned_section": 5,
+      "due": 45,
+      "workload": 19,
+      "min_cranes": 2,
+      "max_cranes": 3,
+      "std_cranes": 2
+    },
+    {
+      "id": 6,
+      "name": "Clontarf Sound",
+      "kind": "container",
+      "length_m": 140,
+      "draught_m": 7.2,
+      "from_port": "Bristol",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "b50a",
+        "b50n"
+      ],
+      "sections": 4,
+      "arrival": 13,
+      "handling": 5,
+      "planned_hour": 13,
+      "planned_section": 1,
+      "due": 18,
+      "workload": 9,
+      "min_cranes": 1,
+      "max_cranes": 3,
+      "std_cranes": 2
+    },
+    {
+      "id": 7,
+      "name": "Kippure Wave",
+      "kind": "container",
+      "length_m": 195,
+      "draught_m": 8.5,
+      "from_port": "Le Havre",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "b50a",
+        "b50n"
+      ],
+      "sections": 5,
+      "arrival": 54,
+      "handling": 10,
+      "planned_hour": 48,
+      "planned_section": 5,
+      "due": 58,
+      "workload": 19,
+      "min_cranes": 1,
+      "max_cranes": 3,
+      "std_cranes": 2
+    },
+    {
+      "id": 8,
+      "name": "Dalkey Reach",
+      "kind": "container",
+      "length_m": 160,
+      "draught_m": 8,
+      "from_port": "Southampton",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "b50a",
+        "b50n"
+      ],
+      "sections": 4,
+      "arrival": 60,
+      "handling": 5,
+      "planned_hour": 60,
+      "planned_section": 5,
+      "due": 65,
+      "workload": 10,
+      "min_cranes": 1,
+      "max_cranes": 3,
+      "std_cranes": 2
+    },
+    {
+      "id": 9,
+      "name": "Malahide Box",
+      "kind": "container",
+      "length_m": 178,
+      "draught_m": 8.3,
+      "from_port": "Antwerp",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "b50a",
+        "b50n"
+      ],
+      "sections": 5,
+      "arrival": 68,
+      "handling": 4,
+      "planned_hour": 68,
+      "planned_section": 5,
+      "due": 72,
+      "workload": 7,
+      "min_cranes": 1,
+      "max_cranes": 3,
+      "std_cranes": 2
+    },
+    {
+      "id": 10,
+      "name": "Iveagh Trailer",
+      "kind": "container",
+      "length_m": 154,
+      "draught_m": 7.8,
+      "from_port": "Liverpool",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "b50a",
+        "b50n"
+      ],
+      "sections": 4,
+      "arrival": 75,
+      "handling": 7,
+      "planned_hour": 75,
+      "planned_section": 5,
+      "due": 82,
+      "workload": 13,
+      "min_cranes": 1,
+      "max_cranes": 3,
+      "std_cranes": 2
+    },
+    {
+      "id": 11,
+      "name": "Santry Cut",
+      "kind": "container",
+      "length_m": 201,
+      "draught_m": 8.7,
+      "from_port": "Rotterdam",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "b50a",
+        "b50n"
+      ],
+      "sections": 6,
+      "arrival": 86,
+      "handling": 6,
+      "planned_hour": 86,
+      "planned_section": 5,
+      "due": 92,
+      "workload": 12,
+      "min_cranes": 2,
+      "max_cranes": 3,
+      "std_cranes": 2
+    },
+    {
+      "id": 12,
+      "name": "Carmelite Box",
+      "kind": "container",
+      "length_m": 155,
+      "draught_m": 7.6,
+      "from_port": "Belfast",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "b50a",
+        "b50n"
+      ],
+      "sections": 4,
+      "arrival": 40,
+      "handling": 7,
+      "planned_hour": null,
+      "planned_section": null,
+      "due": 58,
+      "workload": 14,
+      "min_cranes": 1,
+      "max_cranes": 3,
+      "std_cranes": 2
+    }
+  ],
+  "blocks": [
+    {
+      "first": 1,
+      "last": 4,
+      "start": 96,
+      "end": 120,
+      "kind": "closed",
+      "label": "50A fender repair"
+    }
+  ],
+  "notices": [
+    "Ship 3 Howth Carrier was delayed leaving Greenock: it now arrives at hour 13 (planned berthing hour 4). Its planned departure stays hour 11.",
+    "Ship 7 Kippure Wave was delayed leaving Le Havre: it now arrives at hour 54 (planned berthing hour 48). Its planned departure stays hour 58.",
+    "Unscheduled call: ship 12 Carmelite Box (155 m, 4 sections) arrives at hour 40, needs 7 hours alongside at standard cranes and asks to sail by hour 58. It has no planned berth, so placing it anywhere allowed costs no move penalty.",
+    "One of DFT's three Liebherr gantry cranes is out from hour 52 to hour 68 (spreader change-out on one DFT gantry). The crane pool is 2 during that window.",
+    "Berth 50A (sections 30\u201333) is closed from hour 96 to hour 120 (fender repair on berth 50A)."
+  ],
+  "disruptions": [
+    {
+      "type": "late",
+      "ship": 3,
+      "hours": 9
+    },
+    {
+      "type": "late",
+      "ship": 7,
+      "hours": 6
+    },
+    {
+      "type": "extra",
+      "ship": 12
+    },
+    {
+      "type": "crane_outage",
+      "start": 52,
+      "end": 68,
+      "cranes": 1,
+      "reason": "spreader change-out on one DFT gantry"
+    },
+    {
+      "type": "closure",
+      "first": 30,
+      "last": 33,
+      "start": 96,
+      "end": 120,
+      "reason": "fender repair on berth 50A"
+    }
+  ],
+  "rules": {
+    "crane_pool": 3,
+    "crane_rate": 25,
+    "crane_outages": [
+      {
+        "start": 52,
+        "end": 68,
+        "cranes": 1
+      }
+    ],
+    "max_moves_per_hour": 2,
+    "reward": 3,
+    "gap_k": 100,
+    "tide_phase": 0,
+    "tide_sn_phase": 0.4
+  },
+  "week_start_utc": "2026-03-16T00:00:00Z"
+}

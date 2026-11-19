@@ -1,0 +1,19 @@
+
+[out:json][timeout:90];
+(
+  way["building"](53.29,-6.32,53.41,-6.08);
+  relation["building"](53.29,-6.32,53.41,-6.08);
+  way["man_made"="storage_tank"](53.29,-6.32,53.41,-6.08);
+  way["man_made"="tank"](53.29,-6.32,53.41,-6.08);
+  node["man_made"="storage_tank"](53.29,-6.32,53.41,-6.08);
+  way["man_made"="tower"](53.29,-6.32,53.41,-6.08);
+  node["man_made"="tower"](53.29,-6.32,53.41,-6.08);
+  way["man_made"="chimney"](53.29,-6.32,53.41,-6.08);
+  node["man_made"="chimney"](53.29,-6.32,53.41,-6.08);
+  way["highway"](53.29,-6.32,53.41,-6.08);
+  way["railway"="rail"](53.29,-6.32,53.41,-6.08);
+  way["railway"="light_rail"](53.29,-6.32,53.41,-6.08);
+  way["railway"="tram"](53.29,-6.32,53.41,-6.08);
+  way["amenity"="parking"](53.29,-6.32,53.41,-6.08);
+);
+out geom;

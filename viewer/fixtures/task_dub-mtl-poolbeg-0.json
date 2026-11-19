@@ -1,0 +1,392 @@
+{
+  "task_id": "dub-mtl-poolbeg-0",
+  "split": "test",
+  "quay": "MTL",
+  "terminal": "MTL, Poolbeg (south bank)",
+  "week": 30,
+  "difficulty": "storm",
+  "first_section": 1,
+  "last_section": 15,
+  "section_m": 40,
+  "ships": [
+    {
+      "id": 0,
+      "name": "South Wall Feeder",
+      "kind": "container",
+      "length_m": 148,
+      "draught_m": 7,
+      "from_port": "Rotterdam",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 4,
+      "arrival": 5,
+      "handling": 10,
+      "planned_hour": 5,
+      "planned_section": 1,
+      "due": 15,
+      "display_name": "South Wall Feeder (h5)"
+    },
+    {
+      "id": 1,
+      "name": "Ringsend Box",
+      "kind": "container",
+      "length_m": 165,
+      "draught_m": 8.4,
+      "from_port": "Antwerp",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 5,
+      "arrival": 8,
+      "handling": 12,
+      "planned_hour": 8,
+      "planned_section": 1,
+      "due": 20,
+      "display_name": "Ringsend Box (h8)"
+    },
+    {
+      "id": 2,
+      "name": "Irishtown Cut",
+      "kind": "container",
+      "length_m": 188,
+      "draught_m": 8.6,
+      "from_port": "Le Havre",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 5,
+      "arrival": 6,
+      "handling": 14,
+      "planned_hour": 6,
+      "planned_section": 1,
+      "due": 20,
+      "display_name": "Irishtown Cut (h6)"
+    },
+    {
+      "id": 3,
+      "name": "Pigeon House",
+      "kind": "container",
+      "length_m": 120,
+      "draught_m": 7.1,
+      "from_port": "Liverpool",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 3,
+      "arrival": 10,
+      "handling": 8,
+      "planned_hour": 10,
+      "planned_section": 1,
+      "due": 18,
+      "display_name": "Pigeon House (h10)"
+    },
+    {
+      "id": 4,
+      "name": "Shelly Banks",
+      "kind": "container",
+      "length_m": 158,
+      "draught_m": 8,
+      "from_port": "Greenock",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 4,
+      "arrival": 4,
+      "handling": 11,
+      "planned_hour": 4,
+      "planned_section": 1,
+      "due": 15,
+      "display_name": "Shelly Banks (h4)"
+    },
+    {
+      "id": 5,
+      "name": "South Wall Feeder",
+      "kind": "container",
+      "length_m": 148,
+      "draught_m": 7,
+      "from_port": "Rotterdam",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 4,
+      "arrival": 28,
+      "handling": 10,
+      "planned_hour": 28,
+      "planned_section": 1,
+      "due": 38,
+      "display_name": "South Wall Feeder (h28)"
+    },
+    {
+      "id": 6,
+      "name": "Ringsend Box",
+      "kind": "container",
+      "length_m": 165,
+      "draught_m": 8.4,
+      "from_port": "Antwerp",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 5,
+      "arrival": 36,
+      "handling": 12,
+      "planned_hour": 36,
+      "planned_section": 1,
+      "due": 48,
+      "display_name": "Ringsend Box (h36)"
+    },
+    {
+      "id": 7,
+      "name": "Irishtown Cut",
+      "kind": "container",
+      "length_m": 188,
+      "draught_m": 8.6,
+      "from_port": "Le Havre",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 5,
+      "arrival": 40,
+      "handling": 14,
+      "planned_hour": 40,
+      "planned_section": 1,
+      "due": 54,
+      "display_name": "Irishtown Cut (h40)"
+    },
+    {
+      "id": 8,
+      "name": "Merrion Strand",
+      "kind": "container",
+      "length_m": 210,
+      "draught_m": 8.8,
+      "from_port": "Rotterdam",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 6,
+      "arrival": 42,
+      "handling": 16,
+      "planned_hour": 32,
+      "planned_section": 1,
+      "due": 48,
+      "display_name": "Merrion Strand (h32)"
+    },
+    {
+      "id": 9,
+      "name": "Pigeon House",
+      "kind": "container",
+      "length_m": 120,
+      "draught_m": 7.1,
+      "from_port": "Liverpool",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 3,
+      "arrival": 48,
+      "handling": 8,
+      "planned_hour": 48,
+      "planned_section": 1,
+      "due": 56,
+      "display_name": "Pigeon House (h48)"
+    },
+    {
+      "id": 10,
+      "name": "Shelly Banks",
+      "kind": "container",
+      "length_m": 158,
+      "draught_m": 8,
+      "from_port": "Greenock",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 4,
+      "arrival": 52,
+      "handling": 11,
+      "planned_hour": 52,
+      "planned_section": 1,
+      "due": 63,
+      "display_name": "Shelly Banks (h52)"
+    },
+    {
+      "id": 11,
+      "name": "Sandymount Box",
+      "kind": "container",
+      "length_m": 174,
+      "draught_m": 8.3,
+      "from_port": "Zeebrugge",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 5,
+      "arrival": 70,
+      "handling": 13,
+      "planned_hour": 70,
+      "planned_section": 1,
+      "due": 83,
+      "display_name": "Sandymount Box (h70)"
+    },
+    {
+      "id": 12,
+      "name": "Irishtown Cut",
+      "kind": "container",
+      "length_m": 188,
+      "draught_m": 8.6,
+      "from_port": "Le Havre",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 5,
+      "arrival": 72,
+      "handling": 14,
+      "planned_hour": 72,
+      "planned_section": 1,
+      "due": 86,
+      "display_name": "Irishtown Cut (h72)"
+    },
+    {
+      "id": 13,
+      "name": "Merrion Strand",
+      "kind": "container",
+      "length_m": 210,
+      "draught_m": 8.8,
+      "from_port": "Rotterdam",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 6,
+      "arrival": 80,
+      "handling": 16,
+      "planned_hour": 80,
+      "planned_section": 1,
+      "due": 96,
+      "display_name": "Merrion Strand (h80)"
+    },
+    {
+      "id": 14,
+      "name": "Ringsend Box",
+      "kind": "container",
+      "length_m": 165,
+      "draught_m": 8.4,
+      "from_port": "Antwerp",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 5,
+      "arrival": 88,
+      "handling": 12,
+      "planned_hour": 88,
+      "planned_section": 1,
+      "due": 100,
+      "display_name": "Ringsend Box (h88)"
+    },
+    {
+      "id": 15,
+      "name": "Grand Canal Dock",
+      "kind": "container",
+      "length_m": 142,
+      "draught_m": 7.3,
+      "from_port": "Belfast",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "mtl"
+      ],
+      "sections": 4,
+      "arrival": 44,
+      "handling": 9,
+      "planned_hour": null,
+      "planned_section": null,
+      "due": 60,
+      "display_name": "Grand Canal Dock"
+    }
+  ],
+  "blocks": [
+    {
+      "first": 9,
+      "last": 10,
+      "start": 40,
+      "end": 64,
+      "kind": "closed",
+      "label": "berth 44 fender works"
+    }
+  ],
+  "notices": [
+    "MTL's current crane fleet was not independently verified; this scenario does not cap a crane pool.",
+    "Berths 41\u201345 are planned as one continuous LoLo face (assumption). Official individual lengths still appear on the map. Approach depth 7.8 m is the official figure for berths 42\u201344.",
+    "Ship 8 Merrion Strand (h32) was delayed leaving Rotterdam: it now arrives at hour 42 (planned berthing hour 32). Its planned departure stays hour 48.",
+    "Berth 44 is closed from hour 40 to hour 64 (fender works on berth 44 (two planning sections on the combined MTL face)).",
+    "Unscheduled call: ship 15 Grand Canal Dock (142 m) arrives at hour 44, needs 9 hours and asks to sail by hour 60."
+  ],
+  "disruptions": [
+    {
+      "type": "late",
+      "ship": 8,
+      "hours": 10
+    },
+    {
+      "type": "closure",
+      "first": 78,
+      "last": 79,
+      "start": 40,
+      "end": 64,
+      "reason": "fender works on berth 44 (two planning sections on the combined MTL face)"
+    },
+    {
+      "type": "extra",
+      "ship": 15
+    }
+  ],
+  "rules": {
+    "reward": 3,
+    "gap_k": 100,
+    "tide_phase": 0.6,
+    "tide_sn_phase": 2
+  },
+  "week_start_utc": "2026-07-20T00:00:00Z"
+}

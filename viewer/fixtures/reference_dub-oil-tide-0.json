@@ -1,0 +1,122 @@
+{
+  "naive_plan": [
+    {
+      "ship": 2,
+      "berth_hour": 10,
+      "section": 3
+    },
+    {
+      "ship": 6,
+      "berth_hour": 36,
+      "section": 4
+    },
+    {
+      "ship": 3,
+      "berth_hour": 48,
+      "section": 3
+    },
+    {
+      "ship": 9,
+      "berth_hour": 92,
+      "section": 3
+    },
+    {
+      "ship": 0,
+      "berth_hour": 11,
+      "section": 1
+    },
+    {
+      "ship": 1,
+      "berth_hour": 11,
+      "section": 2
+    },
+    {
+      "ship": 4,
+      "berth_hour": 48,
+      "section": 1
+    },
+    {
+      "ship": 5,
+      "berth_hour": 60,
+      "section": 2
+    },
+    {
+      "ship": 7,
+      "berth_hour": 86,
+      "section": 1
+    },
+    {
+      "ship": 8,
+      "berth_hour": 86,
+      "section": 2
+    },
+    {
+      "ship": 10,
+      "berth_hour": 123,
+      "section": 1
+    }
+  ],
+  "optimal_cost": 179,
+  "naive_cost": 179,
+  "unavoidable_cost": 11,
+  "heuristic": "naive + local search (not a proven CP-SAT optimum)",
+  "optimal_plan": [
+    {
+      "ship": 2,
+      "berth_hour": 10,
+      "section": 3
+    },
+    {
+      "ship": 6,
+      "berth_hour": 36,
+      "section": 4
+    },
+    {
+      "ship": 3,
+      "berth_hour": 48,
+      "section": 3
+    },
+    {
+      "ship": 9,
+      "berth_hour": 92,
+      "section": 3
+    },
+    {
+      "ship": 0,
+      "berth_hour": 11,
+      "section": 1
+    },
+    {
+      "ship": 1,
+      "berth_hour": 11,
+      "section": 2
+    },
+    {
+      "ship": 4,
+      "berth_hour": 48,
+      "section": 1
+    },
+    {
+      "ship": 5,
+      "berth_hour": 60,
+      "section": 2
+    },
+    {
+      "ship": 7,
+      "berth_hour": 86,
+      "section": 1
+    },
+    {
+      "ship": 8,
+      "berth_hour": 86,
+      "section": 2
+    },
+    {
+      "ship": 10,
+      "berth_hour": 123,
+      "section": 1
+    }
+  ],
+  "proven_optimal": false,
+  "solver": "naive + local search (not a proven CP-SAT optimum)"
+}

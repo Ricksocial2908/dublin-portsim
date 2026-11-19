@@ -1,0 +1,293 @@
+{
+  "task_id": "dub-oil-tide-0",
+  "split": "test",
+  "quay": "OB",
+  "terminal": "Dublin Port oil jetties (OB1\u2013OB4)",
+  "week": 36,
+  "difficulty": "expert",
+  "first_section": 1,
+  "last_section": 4,
+  "section_m": 40,
+  "ships": [
+    {
+      "id": 0,
+      "name": "Fairway Spirit",
+      "kind": "tanker",
+      "length_m": 178,
+      "draught_m": 9.8,
+      "from_port": "Milford Haven",
+      "to_port": "Dublin",
+      "weight": 2,
+      "imo": "",
+      "allowed_berths": [
+        "ob1",
+        "ob2"
+      ],
+      "cargo": "product",
+      "sections": 1,
+      "arrival": 6,
+      "handling": 14,
+      "planned_hour": 6,
+      "planned_section": 1,
+      "due": 20,
+      "display_name": "Fairway Spirit (h6)"
+    },
+    {
+      "id": 1,
+      "name": "Liffey Bar",
+      "kind": "tanker",
+      "length_m": 170,
+      "draught_m": 10.1,
+      "from_port": "Rotterdam",
+      "to_port": "Dublin",
+      "weight": 2,
+      "imo": "",
+      "allowed_berths": [
+        "ob1",
+        "ob2"
+      ],
+      "cargo": "product",
+      "sections": 1,
+      "arrival": 8,
+      "handling": 16,
+      "planned_hour": 8,
+      "planned_section": 2,
+      "due": 24,
+      "display_name": "Liffey Bar (h8)"
+    },
+    {
+      "id": 2,
+      "name": "Bitumen Isle",
+      "kind": "tanker",
+      "length_m": 140,
+      "draught_m": 7.4,
+      "from_port": "Antwerp",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "ob3",
+        "ob4"
+      ],
+      "cargo": "bitumen",
+      "sections": 1,
+      "arrival": 10,
+      "handling": 18,
+      "planned_hour": 10,
+      "planned_section": 3,
+      "due": 28,
+      "display_name": "Bitumen Isle (h10)"
+    },
+    {
+      "id": 3,
+      "name": "Poolbeg Gas",
+      "kind": "tanker",
+      "length_m": 130,
+      "draught_m": 7,
+      "from_port": "Teesside",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "ob3"
+      ],
+      "cargo": "lpg",
+      "sections": 1,
+      "arrival": 48,
+      "handling": 12,
+      "planned_hour": 48,
+      "planned_section": 3,
+      "due": 60,
+      "display_name": "Poolbeg Gas (h48)"
+    },
+    {
+      "id": 4,
+      "name": "Fairway Spirit",
+      "kind": "tanker",
+      "length_m": 178,
+      "draught_m": 9.8,
+      "from_port": "Milford Haven",
+      "to_port": "Dublin",
+      "weight": 2,
+      "imo": "",
+      "allowed_berths": [
+        "ob1",
+        "ob2"
+      ],
+      "cargo": "product",
+      "sections": 1,
+      "arrival": 40,
+      "handling": 14,
+      "planned_hour": 40,
+      "planned_section": 1,
+      "due": 54,
+      "display_name": "Fairway Spirit (h40)"
+    },
+    {
+      "id": 5,
+      "name": "Eastern Grade",
+      "kind": "tanker",
+      "length_m": 160,
+      "draught_m": 9.6,
+      "from_port": "Pembroke",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "ob1",
+        "ob2"
+      ],
+      "cargo": "product",
+      "sections": 1,
+      "arrival": 55,
+      "handling": 15,
+      "planned_hour": 44,
+      "planned_section": 2,
+      "due": 59,
+      "display_name": "Eastern Grade (h44)"
+    },
+    {
+      "id": 6,
+      "name": "Bitumen Isle",
+      "kind": "tanker",
+      "length_m": 140,
+      "draught_m": 7.4,
+      "from_port": "Antwerp",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "ob3",
+        "ob4"
+      ],
+      "cargo": "bitumen",
+      "sections": 1,
+      "arrival": 36,
+      "handling": 16,
+      "planned_hour": 36,
+      "planned_section": 4,
+      "due": 52,
+      "display_name": "Bitumen Isle (h36)"
+    },
+    {
+      "id": 7,
+      "name": "North Wall Product",
+      "kind": "tanker",
+      "length_m": 175,
+      "draught_m": 10,
+      "from_port": "Rotterdam",
+      "to_port": "Dublin",
+      "weight": 3,
+      "imo": "",
+      "allowed_berths": [
+        "ob1",
+        "ob2"
+      ],
+      "cargo": "product",
+      "sections": 1,
+      "arrival": 80,
+      "handling": 16,
+      "planned_hour": 80,
+      "planned_section": 1,
+      "due": 96,
+      "display_name": "North Wall Product (h80)",
+      "berth_deadline": 84,
+      "deadline_penalty": 20
+    },
+    {
+      "id": 8,
+      "name": "Liffey Bar",
+      "kind": "tanker",
+      "length_m": 170,
+      "draught_m": 10.1,
+      "from_port": "Rotterdam",
+      "to_port": "Dublin",
+      "weight": 2,
+      "imo": "",
+      "allowed_berths": [
+        "ob1",
+        "ob2"
+      ],
+      "cargo": "product",
+      "sections": 1,
+      "arrival": 84,
+      "handling": 16,
+      "planned_hour": 84,
+      "planned_section": 2,
+      "due": 100,
+      "display_name": "Liffey Bar (h84)"
+    },
+    {
+      "id": 9,
+      "name": "Poolbeg Gas",
+      "kind": "tanker",
+      "length_m": 130,
+      "draught_m": 7,
+      "from_port": "Teesside",
+      "to_port": "Dublin",
+      "weight": 1,
+      "imo": "",
+      "allowed_berths": [
+        "ob3"
+      ],
+      "cargo": "lpg",
+      "sections": 1,
+      "arrival": 92,
+      "handling": 12,
+      "planned_hour": 92,
+      "planned_section": 3,
+      "due": 104,
+      "display_name": "Poolbeg Gas (h92)"
+    },
+    {
+      "id": 10,
+      "name": "Fairway Spirit",
+      "kind": "tanker",
+      "length_m": 178,
+      "draught_m": 9.8,
+      "from_port": "Milford Haven",
+      "to_port": "Dublin",
+      "weight": 2,
+      "imo": "",
+      "allowed_berths": [
+        "ob1",
+        "ob2"
+      ],
+      "cargo": "product",
+      "sections": 1,
+      "arrival": 120,
+      "handling": 14,
+      "planned_hour": 120,
+      "planned_section": 1,
+      "due": 134,
+      "display_name": "Fairway Spirit (h120)"
+    }
+  ],
+  "blocks": [],
+  "notices": [
+    "Deep product tankers (draught around 10 m) cannot transit the official 7.7\u20137.8 m approach at low water. The planner blocks berthing and departure outside the tidal window (approach depth + tide \u2212 1.0 m UKC).",
+    "OB1 and OB2 take petroleum products; OB3 takes bitumen and LPG; OB4 is shallower (survey 6.2 m) and only suits the lighter bitumen calls.",
+    "Ship 5 Eastern Grade (h44) was delayed leaving Pembroke: it now arrives at hour 55 (planned berthing hour 44). Its planned departure stays hour 59.",
+    "Emergency: ship 7 North Wall Product (h80) is a priority discharge and should be berthed by hour 84, or a penalty of 20 per hour late to the berth applies (weight 3)."
+  ],
+  "disruptions": [
+    {
+      "type": "late",
+      "ship": 5,
+      "hours": 11
+    },
+    {
+      "type": "emergency",
+      "ship": 7,
+      "berth_deadline": 84,
+      "deadline_penalty": 20
+    }
+  ],
+  "rules": {
+    "reward": 3,
+    "gap_k": 100,
+    "tide_phase": 0,
+    "tide_sn_phase": 0
+  },
+  "week_start_utc": "2026-08-31T00:00:00Z"
+}

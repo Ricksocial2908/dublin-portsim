@@ -1,7 +1,53 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "buildCommand": "mkdir -p public && cp -r web/. public/",
+  "buildCommand": "mkdir -p public/viewer public/api && cp -a viewer/. public/viewer/ && cp api-static/index.html public/index.html && cp api-static/config.json public/api/config.json && cp api-static/healthz.json public/healthz.json",
   "outputDirectory": "public",
-  "cleanUrls": true
+  "cleanUrls": false,
+  "rewrites": [
+    {
+      "source": "/api/config",
+      "destination": "/api/config.json"
+    },
+    {
+      "source": "/api/tasks/:id/reference",
+      "destination": "/viewer/fixtures/reference_:id.json"
+    },
+    {
+      "source": "/api/tasks/:id",
+      "destination": "/viewer/fixtures/task_:id.json"
+    },
+    {
+      "source": "/api/tasks",
+      "destination": "/viewer/fixtures/tasks.json"
+    },
+    {
+      "source": "/api/runs/:path*",
+      "destination": "/viewer/fixtures/runs.json"
+    },
+    {
+      "source": "/api/runs",
+      "destination": "/viewer/fixtures/runs.json"
+    },
+    {
+      "source": "/api/episodes/:path*",
+      "destination": "/viewer/fixtures/episodes.json"
+    },
+    {
+      "source": "/api/episodes",
+      "destination": "/viewer/fixtures/episodes.json"
+    },
+    {
+      "source": "/healthz",
+      "destination": "/healthz.json"
+    },
+    {
+      "source": "/web",
+      "destination": "/viewer/index.html"
+    },
+    {
+      "source": "/web/(.*)",
+      "destination": "/viewer/index.html"
+    }
+  ]
 }

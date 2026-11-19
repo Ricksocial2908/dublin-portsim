@@ -1,1 +1,8 @@
-{ "type": "module" }
+{
+  "type": "module",
+  "name": "dublin-portsim",
+  "private": true,
+  "scripts": {
+    "build": "echo static"
+  }
+}

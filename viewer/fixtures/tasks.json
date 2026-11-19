@@ -1,0 +1,92 @@
+[
+  {
+    "task_id": "dub-dft-w12-busy-0",
+    "split": "test",
+    "quay": "50N",
+    "terminal": "Dublin Ferryport Terminals (DFT)",
+    "week": 12,
+    "difficulty": "busy",
+    "ships": 13,
+    "disruptions": [
+      {
+        "type": "late",
+        "ship": 3,
+        "hours": 9
+      },
+      {
+        "type": "late",
+        "ship": 7,
+        "hours": 6
+      },
+      {
+        "type": "extra",
+        "ship": 12
+      },
+      {
+        "type": "crane_outage",
+        "start": 52,
+        "end": 68,
+        "cranes": 1,
+        "reason": "spreader change-out on one DFT gantry"
+      },
+      {
+        "type": "closure",
+        "first": 30,
+        "last": 33,
+        "start": 96,
+        "end": 120,
+        "reason": "fender repair on berth 50A"
+      }
+    ]
+  },
+  {
+    "task_id": "dub-mtl-poolbeg-0",
+    "split": "test",
+    "quay": "MTL",
+    "terminal": "MTL, Poolbeg (south bank)",
+    "week": 30,
+    "difficulty": "storm",
+    "ships": 16,
+    "disruptions": [
+      {
+        "type": "late",
+        "ship": 8,
+        "hours": 10
+      },
+      {
+        "type": "closure",
+        "first": 78,
+        "last": 79,
+        "start": 40,
+        "end": 64,
+        "reason": "fender works on berth 44 (two planning sections on the combined MTL face)"
+      },
+      {
+        "type": "extra",
+        "ship": 15
+      }
+    ]
+  },
+  {
+    "task_id": "dub-oil-tide-0",
+    "split": "test",
+    "quay": "OB",
+    "terminal": "Dublin Port oil jetties (OB1\u2013OB4)",
+    "week": 36,
+    "difficulty": "expert",
+    "ships": 11,
+    "disruptions": [
+      {
+        "type": "late",
+        "ship": 5,
+        "hours": 11
+      },
+      {
+        "type": "emergency",
+        "ship": 7,
+        "berth_deadline": 84,
+        "deadline_penalty": 20
+      }
+    ]
+  }
+]
