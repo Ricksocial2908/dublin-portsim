@@ -7,13 +7,17 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { callKinds, cranePoolAt, escapeHtml, hasCranes } from "./model.js";
 import { C, Parts, clamp, disposeTree, lerp, smooth, stripeTexture, vcMat } from "./scene-kit.js";
 import { ATMOSPHERES, HAZE, NO_REFLECT, SUN_COLOR, buildSky, buildWater, setSkyAtmosphere, skyEnvironment, sunFor } from "./scene-env.js";
-import { WATER_Y, buildWorld, layoutFor } from "./scene-world.js";
+import { BOX_H, WATER_Y, buildWorld, layoutFor } from "./scene-world.js";
 import { buildShipModel, shipColors } from "./scene-ships.js";
 import { buildTraffic, createWaterMask, escortPoses, hullsOverlap, poseAt, trafficBodies, trafficVessels } from "./navigation.js";
 import { buildCrane, craneStyle, craneTargets } from "./scene-cranes.js";
-import { dischargeOrder, planDischarges } from './cargo-handling.js';
+import { cargoState, dischargeOrder, planDischarges } from './cargo-handling.js';
 import { buildCargoReplay } from './scene-cargo.js';
 import { loadTwin } from "./twin.js";
+import {
+  assignCraneIndex, createLiftLayer, dischargeJob, formatSimClock, hideLiftSlot,
+  loadState, pickDestination, renderBoxPanel, slotWorld, stackAbove, writeLiftVisual,
+} from "./container-ops.js";
 
 const twin = await loadTwin();
 
@@ -41,6 +45,16 @@ export class PortScene {
     this.trafficEl.setAttribute("aria-label", "Harbour traffic");
     this.trafficEl.title = "Kinematic traffic replay. Manoeuvres wait for safe clearance; the chart and reward retain the submitted schedule.";
     this.el.appendChild(this.trafficEl);
+    this.boxPanel = document.createElement("div");
+    this.boxPanel.className = "box-panel";
+    this.boxPanel.hidden = true;
+    this.boxPanel.setAttribute("aria-label", "Container");
+    this.el.appendChild(this.boxPanel);
+    this.boxPanel.addEventListener("click", (e) => {
+      const act = e.target.closest("[data-act]")?.dataset.act;
+      if (act === "close-box") this._closeBoxPanel();
+      else if (act === "load-box" && this.selectedBox) this.startLoad(this.selectedBox);
+    });
     this.labelLayer = document.createElement("div");
     this.labelLayer.className = "scene-labels";
     this.el.appendChild(this.labelLayer);
@@ -92,6 +106,11 @@ export class PortScene {
     this.clock = new THREE.Clock();
     this.realTime = 0;
     this.visible = true;
+    this.lifts = [];
+    this.liftLayer = null;
+    this.manualRemoved = new Map();
+    this.usedDest = new Set();
+    this.selectedBox = null;
     this._bindPointer();
     this.composer = null;
     this._setupPost();
@@ -190,6 +209,7 @@ export class PortScene {
       }
       this.world = w;
       this.scene.add(w.root);
+      this._ensureLiftLayer();
       this.water.userData.setFrame(lay, twin.frame.extent);
       this.waterMask = createWaterMask(lay, twin);
       this._applyAtmosphere(lay);
@@ -220,6 +240,12 @@ export class PortScene {
       disposeTree(a.model.group);
     }
     this.actors.clear();
+    this.lifts = [];
+    this.manualRemoved = new Map();
+    this.usedDest = new Set();
+    this.selectedBox = null;
+    this._boxRecords = new Map();
+    if (this.boxPanel) this.boxPanel.hidden = true;
     const kinds = callKinds(task);
     for (const s of task.ships) {
       const kind = kinds.get(s.id) || null;
@@ -578,6 +604,11 @@ export class PortScene {
       const r = this.canvas.getBoundingClientRect();
       this.pointer = { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1 };
       const hit = this._pick();
+      if (hit && hit.container) {
+        this._onContainerClick(hit.container, hit.actor);
+        if (this.onSelect && hit.actor) this.onSelect(hit.actor.id);
+        return;
+      }
       if (this.onSelect) this.onSelect(hit ? hit.id : null);
     });
     this.controls.addEventListener("start", () => {
@@ -590,11 +621,40 @@ export class PortScene {
   _pick() {
     if (!this.pointer) return null;
     this.raycaster.setFromCamera(this.pointer, this.camera);
+    const boxHit = this._pickContainer();
+    if (boxHit) return boxHit;
     const picks = [];
     for (const a of this.actors.values()) if (a.model.group.visible) picks.push(a.model.pick);
     const hits = this.raycaster.intersectObjects(picks, false);
     if (!hits.length) return null;
     for (const a of this.actors.values()) if (a.model.pick === hits[0].object) return a;
+    return null;
+  }
+
+  _pickContainer() {
+    const meshes = [];
+    for (const a of this.actors.values()) if (a.model.group.visible && a.model.deck) meshes.push(a.model.deck);
+    if (this.liftLayer) meshes.push(this.liftLayer.boxes);
+    if (this.cargo?.root) this.cargo.root.traverse((o) => { if (o.isInstancedMesh && o !== this.cargo.root && o.geometry?.attributes?.aBrand) meshes.push(o); });
+    if (!meshes.length) return null;
+    const hits = this.raycaster.intersectObjects(meshes, false);
+    if (!hits.length) return null;
+    const h = hits[0];
+    const inst = h.instanceId;
+    // Interactive lift instance
+    if (this.liftLayer && h.object === this.liftLayer.boxes && inst != null) {
+      const lift = this.lifts[inst];
+      if (lift && lift.rec) return { container: lift.rec, actor: this.actors.get(lift.rec.ship), id: this.actors.get(lift.rec.ship)?.id };
+    }
+    // Ship deck instance
+    for (const a of this.actors.values()) {
+      if (h.object !== a.model.deck || inst == null) continue;
+      const slot = a.model.cargoSlots[inst];
+      if (!slot) continue;
+      const rec = this._recordFor(a, slot);
+      if (rec.state === "aboard" && this._isRemoved(a.key, slot.id)) continue;
+      return { container: rec, actor: a, id: a.id };
+    }
     return null;
   }
 
@@ -694,6 +754,8 @@ export class PortScene {
     }
 
     const cargoFrame = this.cargoSuspended ? null : this.cargo?.update(t);
+    this._mergeManualDischarged();
+    const liftCargo = this._tickLifts(dt);
     // cranes
     if (this.cranes.length) {
       const N = this.cranes.length;
@@ -707,8 +769,17 @@ export class PortScene {
       this._snapCranes = false;
       this._lastT = t;
       this.cranes.forEach((c, i) => {
-        targets[i].cargo = cargoFrame?.craneStates.get(`${targets[i].ship}:${targets[i].x.toFixed(3)}`);
-        c.update(dt, this.realTime, targets[i], snap);
+        const interactive = liftCargo.get(i);
+        if (interactive) {
+          targets[i].x = interactive.x;
+          targets[i].working = true;
+          targets[i].hidden = false;
+          targets[i].out = false;
+          targets[i].cargo = interactive.cargo;
+        } else {
+          targets[i].cargo = cargoFrame?.craneStates.get(`${targets[i].ship}:${targets[i].x.toFixed(3)}`);
+        }
+        c.update(dt, this.realTime, targets[i], snap && !interactive);
         c.setGrey(targets[i].out ? 1 : 0);
       });
     }
@@ -868,6 +939,274 @@ export class PortScene {
     }
   }
 
+
+  /* ---------------- click-to-discharge ---------------- */
+
+  _ensureLiftLayer() {
+    if (this.liftLayer) return;
+    this.liftLayer = createLiftLayer();
+    this.scene.add(this.liftLayer.root);
+  }
+
+  _recordFor(actor, slot) {
+    const id = `${actor.key}:${slot.id}`;
+    if (!this._boxRecords) this._boxRecords = new Map();
+    let rec = this._boxRecords.get(id);
+    if (!rec) {
+      rec = {
+        id,
+        ship: actor.key,
+        shipName: actor.ship?.name || actor.name || actor.key,
+        shipId: actor.id,
+        slot,
+        kind: "Container",
+        state: "aboard",
+        history: [`Loaded on ${actor.ship?.name || actor.key} (departure port)`],
+        craneLabel: "",
+      };
+      this._boxRecords.set(id, rec);
+    }
+    return rec;
+  }
+
+  _isRemoved(shipKey, slotId) {
+    return !!this.manualRemoved.get(shipKey)?.has(slotId);
+  }
+
+  _markRemoved(shipKey, slotId, on = true) {
+    if (!this.manualRemoved.has(shipKey)) this.manualRemoved.set(shipKey, new Set());
+    const set = this.manualRemoved.get(shipKey);
+    if (on) set.add(slotId);
+    else set.delete(slotId);
+  }
+
+  _mergeManualDischarged() {
+    if (!this.manualRemoved.size) return;
+    for (const a of this.actors.values()) {
+      const extra = this.manualRemoved.get(a.key);
+      if (!extra || !extra.size) continue;
+      // cargo.update already wrote the auto-discharged set; read it back by
+      // unioning with our manual ids. setDischarged replaces the set, so we
+      // re-apply the union of auto jobs (from live cargo state) and manual ids.
+      const auto = new Set();
+      if (this.cargo && !this.cargoSuspended) {
+        const seconds = this.time * 3600;
+        for (const j of this.cargo.jobs) {
+          if (j.cancelled || j.ship !== a.key) continue;
+          if (seconds >= j.mark.pickup) auto.add(j.slot.id);
+        }
+      }
+      a.model.setDischarged(new Set([...auto, ...extra]));
+    }
+  }
+
+  _onContainerClick(rec, actor) {
+    this.selectedBox = rec;
+    if (rec.state === "aboard") {
+      const pose = actor?.pose;
+      if (!pose || pose.phase !== "alongside") {
+        this._showBoxPanel(rec, "The ship is not alongside, so the gantries cannot reach this box.");
+        return;
+      }
+      const blocked = stackAbove(actor.model.cargoSlots, rec.slot).filter((s) => !this._isRemoved(actor.key, s.id) && !(this.lifts || []).some((L) => L.rec.slot.id === s.id && L.rec.ship === actor.key));
+      if (blocked.length) {
+        // Discharge the top box of this stack first so the clicked one is free next.
+        const top = this._recordFor(actor, blocked[0]);
+        this.selectedBox = top;
+        const err = this.startDischarge(top, actor);
+        this._showBoxPanel(top, err || "This box is under another. Discharging the one above it first.");
+        return;
+      }
+      const err = this.startDischarge(rec, actor);
+      this._showBoxPanel(rec, err || "");
+      return;
+    }
+    this._showBoxPanel(rec);
+  }
+
+  startDischarge(rec, actor) {
+    this._ensureLiftLayer();
+    actor = actor || this.actors.get(rec.ship);
+    if (!actor) return "No ship model for this box.";
+    if (rec.state !== "aboard") return "This box is no longer on the ship.";
+    if (!this.cranes.length) return "No quay cranes on this berth.";
+    const pose = actor.pose;
+    if (!pose || pose.phase !== "alongside") return "The ship is not alongside.";
+    if (this.lifts.some((L) => L.rec.id === rec.id && L.active)) return "This box is already being worked.";
+
+    const world = slotWorld(actor, rec.slot, new THREE.Vector3()).clone();
+    const laneZ = this.lay.craneLane;
+    const roadZ = this.world.cargoRoadZ ?? laneZ - 20;
+    const dest = pickDestination(this.world, world.x, this.usedDest);
+    this.usedDest.add((dest.corridor || "x") + ":" + (dest.p ? dest.p.join(",") : ""));
+    const clearY = world.y + BOX_H / 2 + 6;
+    const source = { x: world.x, y: world.y, z: world.z, ry: pose.th };
+    const job = dischargeJob({ rec, source, destination: dest, laneZ, roadZ, clearY });
+    const craneIndex = assignCraneIndex(this.cranes, this.lifts, world.x);
+    const craneNo = craneIndex + 1;
+    rec.craneLabel = `crane ${craneNo}`;
+    rec.state = "lifting";
+    const when = formatSimClock(this.fmt, this.time);
+    // History is appended when the spreader actually locks on (pickup), so the
+    // wording matches the moment the box leaves the ship.
+    const lift = {
+      rec, actor, job, dest, craneIndex, craneNo, mode: "discharge",
+      active: true, arrived: false, elapsed: 0, t0: 0,
+      srcFn: () => {
+        const p = slotWorld(actor, rec.slot, new THREE.Vector3());
+        job.source.x = p.x; job.source.y = p.y; job.source.z = p.z;
+      },
+      eventPending: `discharged by crane ${craneNo} at ${when}`,
+      layerIndex: this.lifts.length,
+    };
+    // Cancel any automatic replay job for the same slot so the box is not doubled.
+    if (this.cargo) for (const j of this.cargo.jobs) if (j.ship === actor.key && j.slot.id === rec.slot.id) j.cancelled = true;
+    this.lifts.push(lift);
+    this._markRemoved(actor.key, rec.slot.id, true);
+    this._lookAtLift(world);
+    return "";
+  }
+
+  startLoad(rec) {
+    const actor = this.actors.get(rec.ship);
+    if (!actor) return this._showBoxPanel(rec, "The origin ship is no longer in this scene.");
+    const pose = actor.pose;
+    if (!pose || pose.phase !== "alongside") return this._showBoxPanel(rec, "The origin ship is not alongside.");
+    if (rec.state !== "yard" && rec.state !== "quay") return this._showBoxPanel(rec, "This box is not in the yard or on the quay.");
+    if (this.lifts.some((L) => L.rec.id === rec.id && L.active)) return this._showBoxPanel(rec, "This box is already being worked.");
+    const world = slotWorld(actor, rec.slot, new THREE.Vector3()).clone();
+    const laneZ = this.lay.craneLane;
+    const roadZ = this.world.cargoRoadZ ?? laneZ - 20;
+    const dest = rec.dest || { p: [world.x, rec.yardY || (0.34 + 1.3), roadZ - 12], via: [world.x, roadZ], ry: 0, travelY: 9.2, corridor: rec.id, depth: 12 };
+    const source = { x: world.x, y: world.y, z: world.z, ry: pose.th };
+    const job = dischargeJob({ rec, source, destination: dest, laneZ, roadZ, clearY: world.y + BOX_H / 2 + 6 });
+    // Start the reverse clock at the end (stored) and run backwards via loadState.
+    job._reverseFrom = rec.state === "quay" ? job.mark.release : job.mark.home;
+    const craneIndex = assignCraneIndex(this.cranes, this.lifts, world.x);
+    const craneNo = craneIndex + 1;
+    rec.craneLabel = `crane ${craneNo}`;
+    rec.state = "loading";
+    rec.history = rec.history || [];
+    rec.history.push(`load requested onto ${rec.shipName} at ${formatSimClock(this.fmt, this.time)}`);
+    const lift = {
+      rec, actor, job, dest, craneIndex, craneNo, mode: "load",
+      active: true, arrived: true, elapsed: 0, t0: performance.now() / 1000,
+      eventPending: `loaded onto ${rec.shipName} by crane ${craneNo} at ${formatSimClock(this.fmt, this.time)}`,
+      layerIndex: this.lifts.length,
+    };
+    this.lifts.push(lift);
+    this._showBoxPanel(rec);
+    this._lookAtLift(world);
+    return "";
+  }
+
+  _lookAtLift(world) {
+    const target = world.clone ? world.clone() : new THREE.Vector3(world.x, world.y || 8, world.z);
+    target.y = Math.max(8, target.y);
+    // Stand on the apron (negative local z is inland) so the lift over the
+    // ship-to-quay gap is in front of the deck stacks, not hidden behind them.
+    const cam = new THREE.Vector3(target.x - 42, target.y + 22, Math.min(-18, target.z - 55));
+    this.userMoved = true;
+    this._goto(cam, target, true);
+  }
+
+  _tickLifts(dt) {
+    const cargoByCrane = new Map();
+    if (!this.liftLayer) return cargoByCrane;
+    for (let i = 0; i < this.lifts.length; i++) {
+      const L = this.lifts[i];
+      if (!L.active) {
+        if (L.rec.state === "yard" || L.rec.state === "aboard") writeLiftVisual(this.liftLayer, i, L.rec, { owner: L.rec.state === "aboard" ? "ship" : "yard", box: L.lastBox || { x: 0, y: -200, z: 0, ry: 0 }, carrier: null });
+        continue;
+      }
+      if (L.mode === "discharge" && !L.arrived) {
+        L.srcFn?.();
+        const src = L.job.source;
+        cargoByCrane.set(L.craneIndex, { x: src.x, cargo: { x: src.x, y: L.job.clearY, z: src.z, active: false } });
+        const crane = this.cranes[L.craneIndex];
+        if (crane && Math.abs((crane.st?.x ?? src.x) - src.x) < 0.8) {
+          L.arrived = true;
+          L.t0 = performance.now() / 1000;
+        }
+        hideLiftSlot(this.liftLayer, i);
+        continue;
+      }
+      L.elapsed = performance.now() / 1000 - L.t0;
+      const state = L.mode === "load" ? loadState(L.job, L.elapsed) : cargoState(L.job, L.elapsed);
+      if (L.mode === "discharge" && L.eventPending && L.elapsed >= L.job.mark.pickup) {
+        L.rec.history.push(L.eventPending);
+        L.eventPending = null;
+        L.rec.state = "lifting";
+        this._showBoxPanel(L.rec);
+      }
+      if (L.mode === "discharge") {
+        if (state.owner === "quay") L.rec.state = "quay";
+        if (state.owner === "carrier") L.rec.state = "transit";
+        if (state.owner === "yard") {
+          L.rec.state = "yard";
+          L.rec.dest = L.dest;
+          L.rec.yardY = state.box.y;
+          if (L.active && L.elapsed >= L.job.mark.stored) {
+            L.rec.history.push(`stacked in the yard at ${formatSimClock(this.fmt, this.time)}`);
+            L.active = false;
+            this._showBoxPanel(L.rec);
+          }
+        }
+      } else if (L.mode === "load") {
+        if (state.owner === "ship" || L.elapsed >= L.job.duration) {
+          L.rec.state = "aboard";
+          this._markRemoved(L.rec.ship, L.rec.slot.id, false);
+          if (L.eventPending) { L.rec.history.push(L.eventPending); L.eventPending = null; }
+          L.active = false;
+          this._showBoxPanel(L.rec);
+        }
+      }
+      L.lastBox = state.box;
+      writeLiftVisual(this.liftLayer, i, L.rec, state);
+      const working = L.mode === "load"
+        ? (state.owner === "crane" || state.owner === "quay" && L.elapsed > 0)
+        : (L.elapsed <= L.job.mark.clear);
+      if (working) {
+        cargoByCrane.set(L.craneIndex, {
+          x: state.crane.x,
+          cargo: { x: state.crane.x, y: state.crane.y, z: state.crane.z, active: L.mode === "discharge" ? (L.elapsed >= L.job.mark.start && L.elapsed <= L.job.mark.clear) : state.owner === "crane" },
+        });
+      }
+    }
+    if (this.liftLayer) {
+      this.liftLayer.boxes.instanceMatrix.needsUpdate = true;
+      this.liftLayer.carriers.instanceMatrix.needsUpdate = true;
+    }
+    return cargoByCrane;
+  }
+
+  _showBoxPanel(rec, message = "") {
+    this.selectedBox = rec;
+    const canLoad = rec.state === "yard" || rec.state === "quay";
+    this.boxPanel.innerHTML = renderBoxPanel(rec, { canLoad, message });
+    this.boxPanel.hidden = false;
+  }
+
+  _closeBoxPanel() {
+    this.boxPanel.hidden = true;
+  }
+
+  /** Test helper: discharge a top-tier box on an alongside ship and frame the lift. */
+  testDischargeTop() {
+    const alongside = [...this.actors.values()].filter((a) => a.pose?.phase === "alongside" && a.model?.cargoSlots?.length);
+    const actor = alongside[0];
+    if (!actor) return { ok: false, error: "no ship alongside" };
+    const taken = new Set([...(this.manualRemoved.get(actor.key) || [])]);
+    const slots = [...actor.model.cargoSlots].filter((s) => !taken.has(s.id)).sort((a, b) => b.t - a.t || a.x - b.x);
+    const slot = slots[0];
+    if (!slot) return { ok: false, error: "no containers left on deck" };
+    const rec = this._recordFor(actor, slot);
+    const err = this.startDischarge(rec, actor);
+    this.selectedBox = rec;
+    this._showBoxPanel(rec, err || "");
+    return { ok: !err, error: err || "", boxId: rec.id, crane: rec.craneLabel, ship: rec.shipName, tier: slot.t };
+  }
+
   snapshot() {
     this._render();
     return this.canvas.toDataURL("image/png");
@@ -877,6 +1216,7 @@ export class PortScene {
 let shared = null;
 export function getScene() {
   if (!shared) shared = new PortScene();
+  if (typeof window !== "undefined") window.__portScene = shared;
   return shared;
 }
 export const isLite = LITE;

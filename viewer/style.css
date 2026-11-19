@@ -669,3 +669,18 @@ a.ext { font-size: 12px; white-space: nowrap; }
 .mx-c:hover { outline: 2px solid var(--fg); outline-offset: 1px; }
 .mx-missing { background: transparent; border: 1px dashed var(--line); }
 @media (max-width: 700px) { .ov-oth, .ov-otd { display: none; } }
+
+
+/* Clicked-container detail + discharge history */
+.box-panel { position: absolute; z-index: 6; right: 12px; bottom: 74px; width: min(320px, calc(100% - 24px)); max-height: min(420px, 58%); overflow: auto; color: #152028; background: rgba(255,255,255,.94); border: 1px solid rgba(0,0,0,.12); border-radius: 8px; padding: 10px 12px 12px; box-shadow: 0 8px 24px #081c3018; backdrop-filter: blur(10px); font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; pointer-events: auto; }
+.box-panel[hidden] { display: none !important; }
+.box-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.box-head b { font-weight: 650; font-size: 12.5px; }
+.box-close { border: 0; background: transparent; font-size: 18px; line-height: 1; cursor: pointer; color: #445; padding: 0 2px; }
+.box-hist { margin-top: 6px; }
+.box-hist ol { margin: 4px 0 0 18px; padding: 0; }
+.box-hist li { margin: 0 0 3px; }
+.box-msg { margin: 4px 0 0; color: #7a4a12; }
+.box-acts { margin-top: 8px; display: flex; gap: 6px; }
+.stage.cinema .box-panel { bottom: 90px; }
+@media (max-width: 800px) { .box-panel { left: 10px; right: 10px; width: auto; bottom: 70px; } }

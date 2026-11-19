@@ -159,6 +159,6 @@ export function siteFrame(twin, task) {
     toLocal,
     toTwin,
     routes,
-    cruise: r.cruise && isAPM(quay) ? { a: loc(r.cruise.a), b: loc(r.cruise.b) } : null,
+    cruise: r.cruise && (quay === "24B" || quay === "32") ? { a: loc(r.cruise.a), b: loc(r.cruise.b) } : null,
   };
 }

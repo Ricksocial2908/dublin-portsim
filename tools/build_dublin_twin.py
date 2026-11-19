@@ -346,9 +346,11 @@ def sea_and_land(layers, frame):
     # Liffey through the port is about lat 53.345-53.347. That's Y ≈ -150..+50.
     # Extend a channel polygon from the city (X=-2500) to the bay (X=2500).
     channel = Polygon([
-        (-2800, -280), (-200, -200), (800, -260), (1800, -420), (2300, -700),
-        (2300, 200), (1600, 280), (600, 220), (-200, 260), (-2800, 220),
-        (-2800, -280),
+        (-2800, -320), (-1600, -360), (-700, -460), (-200, -520),
+        (200, -620), (800, -650), (1600, -500), (2300, -800),
+        (2300, 280), (1600, 300), (800, 260), (200, 180),
+        (-200, 200), (-700, 160), (-1600, 240), (-2800, 250),
+        (-2800, -320),
     ])
     waters.extend([sea_east, channel])
 
@@ -372,6 +374,45 @@ def sea_and_land(layers, frame):
         water_u = sea_east
 
     return land, water_u
+
+
+
+def punch_fairways(land, water, sites):
+    """Re-open a berth pocket and Liffey fairway after named terminal polygons
+    are painted back as land (they were filling the basin in front of DFT)."""
+    def axes(site):
+        sw, ne = site["sw"], site["ne"]
+        dx, dy = ne[0] - sw[0], ne[1] - sw[1]
+        length = (dx * dx + dy * dy) ** 0.5 or 1.0
+        d = (dx / length, dy / length)
+        n = (d[1], -d[0])
+        return sw, ne, d, n
+    pockets = []
+    for site in sites.values():
+        sw, ne, d, n = axes(site)
+        along, near, far = 140.0, 3.0, 400.0
+        a = (sw[0] - d[0] * along, sw[1] - d[1] * along)
+        b = (ne[0] + d[0] * along, ne[1] + d[1] * along)
+        pockets.append(Polygon([
+            (a[0] + n[0] * near, a[1] + n[1] * near),
+            (b[0] + n[0] * near, b[1] + n[1] * near),
+            (b[0] + n[0] * far, b[1] + n[1] * far),
+            (a[0] + n[0] * far, a[1] + n[1] * far),
+        ]))
+    fairway = unary_union(pockets + [Polygon([
+        (-2800, -320), (-1600, -360), (-700, -460), (-200, -520),
+        (200, -620), (800, -650), (1600, -500), (2300, -800),
+        (2300, 280), (1600, 300), (800, 260), (200, 180),
+        (-200, 200), (-700, 160), (-1600, 240), (-2800, 250),
+        (-2800, -320),
+    ])]).buffer(0)
+    land = land.difference(fairway)
+    if not land.is_valid:
+        land = land.buffer(0)
+    water = water.union(fairway)
+    if not water.is_valid:
+        water = water.buffer(0)
+    return land, water
 
 
 def rings_of(geom):
@@ -870,6 +911,9 @@ def main():
     sites, routes_extra = build_sites(layers, water, tf, frame)
     if "50N" not in sites or "MTL" not in sites:
         print("WARNING missing core sites", sites.keys(), file=sys.stderr)
+    land, water = punch_fairways(land, water, sites)
+    cover = cover_polys(layers, land)
+    print("after fairway punch, land km2", round(land.area / 1e6, 2), "cover keys", {k: len(v) for k, v in cover.items()})
     routes = build_routes(tf, frame, sites, routes_extra)
     slabs = apm_slabs_for({k: v for k, v in sites.items() if k in {"50N", "MTL"}})
     land_rings = rings_of(land)

@@ -48,7 +48,12 @@ export function buildCargoReplay(plan, actors, tall) {
     const seconds = t * 3600, removed = new Map([...actors.keys()].map(k => [k, new Set()]));
     Object.assign(summary, { lifting: 0, quay: 0, transit: 0, stored: 0, phase: '' });
     for (let i = 0; i < jobs.length; i++) {
-      const j = jobs[i], s = cargoState(j, seconds), b = s.box;
+      const j = jobs[i];
+      if (j.cancelled) {
+        setInstance(boxes, i, 0, -100, 0, 0, 0, 0, 0);
+        continue;
+      }
+      const s = cargoState(j, seconds), b = s.box;
       if (s.owner === 'ship') setInstance(boxes, i, 0, -100, 0, 0, 0, 0, 0);
       else {
         removed.get(j.ship)?.add(j.slot.id);
@@ -62,8 +67,8 @@ export function buildCargoReplay(plan, actors, tall) {
     for (const [id, actor] of actors) actor.model.setDischarged(removed.get(id));
     craneStates.clear();
     lanes.forEach((lane, i) => {
-      const current = lane.jobs.find(j => seconds >= j.mark.start && seconds < j.mark.home);
-      const next = lane.jobs.find(j => seconds < j.mark.start);
+      const current = lane.jobs.find(j => !j.cancelled && seconds >= j.mark.start && seconds < j.mark.home);
+      const next = lane.jobs.find(j => !j.cancelled && seconds < j.mark.start);
       const j = current || next || lane.jobs.at(-1);
       const key = `${lane.ship}:${lane.x.toFixed(3)}`;
       if (!j) {

@@ -20,6 +20,7 @@ Repo: [Ricksocial2908/dublin-portsim](https://github.com/Ricksocial2908/dublin-p
 - Sites: **50N** (DFT, official 50A 170 m + 50N 370 m face), **MTL** (combined berths 41–45, ~619 m OSM quay), plus **51** (RoRo), **32** (Ocean Pier) and **OB** (oil) for the 3D harbour.
 - Tasks (single-quay weeks, like the original): `dub-dft-w12-busy-0`, `dub-mtl-poolbeg-0`, `dub-oil-tide-0`. Call lists are synthetic (see assumptions below); berth lengths, depths and tides are from official notices.
 - Play runs the same tools in-page (Vercel cannot host the original `/ws` OpenEnv session). Explorer check / submit already ran client-side in the original.
+- Click a container on an alongside ship and the nearest STS crane discharges it in real time (trolley, spreader, quay handoff, optional truck to a yard slot). The box history records `discharged by crane N at <sim time>`. Yard or quay boxes still open the detail panel, with an optional **Load onto ship** reverse move.
 
 ## Attribution
 
@@ -28,3 +29,5 @@ Adapted from [FineEnvs/PortSimEnv](https://huggingface.co/spaces/FineEnvs/PortSi
 
 ## Assumptions
 See notes.md for verified sources and assumed call lists, crane rates and overhangs.
+
+A navigation fairway (berth pockets ~400 m off each working face, plus a Liffey corridor out to the bay) is subtracted from the land mask so ships can approach. Some named OSM terminal polygons had been painted back over the basin and were blocking every inbound route (`route clearance`). Mid-channel entry/lane waypoints are placed from that punched water, not surveyed leading lights. A few later ships on the busy DFT week can still fail clearance on tight turns; the first planned call (Liffey Feeder) berths normally.
