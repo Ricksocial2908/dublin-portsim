@@ -7,7 +7,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { callKinds, cranePoolAt, escapeHtml, hasCranes } from "./model.js";
 import { C, Parts, clamp, disposeTree, lerp, smooth, stripeTexture, vcMat } from "./scene-kit.js";
 import { ATMOSPHERES, HAZE, NO_REFLECT, SUN_COLOR, buildSky, buildWater, setSkyAtmosphere, skyEnvironment, sunFor } from "./scene-env.js";
-import { BOX_H, WATER_Y, buildWorld, layoutFor } from "./scene-world.js";
+import { BOX_H, BOX_L, BOX_W, WATER_Y, buildWorld, layoutFor } from "./scene-world.js";
 import { buildShipModel, shipColors } from "./scene-ships.js";
 import { buildTraffic, createWaterMask, escortPoses, hullsOverlap, poseAt, trafficBodies, trafficVessels } from "./navigation.js";
 import { buildCrane, craneStyle, craneTargets } from "./scene-cranes.js";
@@ -16,8 +16,9 @@ import { buildCargoReplay } from './scene-cargo.js';
 import { loadTwin } from "./twin.js";
 import {
   assignCraneIndex, createLiftLayer, dischargeJob, formatSimClock, hideLiftSlot,
-  loadState, pickDestination, renderBoxPanel, slotWorld, stackAbove, writeLiftVisual,
+  loadState, pickDestination, slotWorld, stackAbove, writeLiftVisual,
 } from "./container-ops.js";
+import { buildContainerCatalog, recordWorldPos, relatedItems, renderContainerPanel } from "./container-catalog.js";
 
 const twin = await loadTwin();
 
@@ -54,6 +55,10 @@ export class PortScene {
       const act = e.target.closest("[data-act]")?.dataset.act;
       if (act === "close-box") this._closeBoxPanel();
       else if (act === "load-box" && this.selectedBox) this.startLoad(this.selectedBox);
+      else if (act === "select-box") this._selectBoxById(e.target.closest("[data-id]")?.dataset.id, { fly: true });
+      else if (act === "select-ship") this._selectShipByKey(e.target.closest("[data-id]")?.dataset.id, { fly: true });
+      else if (act === "select-crane") this._flyToCrane(Number(e.target.closest("[data-id]")?.dataset.id));
+      else if (act === "select-slot") this._flyToRecord(this._boxRecords?.get(e.target.closest("[data-id]")?.dataset.id));
     });
     this.labelLayer = document.createElement("div");
     this.labelLayer.className = "scene-labels";
@@ -111,6 +116,9 @@ export class PortScene {
     this.manualRemoved = new Map();
     this.usedDest = new Set();
     this.selectedBox = null;
+    this.selectedShip = null;
+    this._boxRecords = new Map();
+    this._hl = null;
     this._bindPointer();
     this.composer = null;
     this._setupPost();
@@ -245,6 +253,7 @@ export class PortScene {
     this.usedDest = new Set();
     this.selectedBox = null;
     this._boxRecords = new Map();
+    this._hideHighlights();
     if (this.boxPanel) this.boxPanel.hidden = true;
     const kinds = callKinds(task);
     for (const s of task.ships) {
@@ -407,7 +416,10 @@ export class PortScene {
       if (schedule.visualDep != null) this.visualHorizon = Math.max(this.visualHorizon, Math.ceil(schedule.segs.at(-1).t1));
     }
     this.cargoSuspended = !snap;
-    if (snap) this._planCargo();
+    if (snap) {
+      this._planCargo();
+      this._refreshCatalog();
+    }
     else {
       // Drag previews can arrive every pointer frame. Rebuild the cargo manifest
       // when the edit is accepted, and keep old transfer positions out of the preview.
@@ -606,7 +618,12 @@ export class PortScene {
       const hit = this._pick();
       if (hit && hit.container) {
         this._onContainerClick(hit.container, hit.actor);
-        if (this.onSelect && hit.actor) this.onSelect(hit.actor.id);
+        if (this.onSelect && (hit.actor || hit.id != null)) this.onSelect(hit.actor ? hit.actor.id : hit.id);
+        return;
+      }
+      if (hit && hit.model && hit.key) {
+        this._onShipClick(hit);
+        if (this.onSelect) this.onSelect(hit.id);
         return;
       }
       if (this.onSelect) this.onSelect(hit ? hit.id : null);
@@ -635,6 +652,7 @@ export class PortScene {
     const meshes = [];
     for (const a of this.actors.values()) if (a.model.group.visible && a.model.deck) meshes.push(a.model.deck);
     if (this.liftLayer) meshes.push(this.liftLayer.boxes);
+    if (this.world?.root) this.world.root.traverse((o) => { if (o.isInstancedMesh && o.userData?.kind === "containers") meshes.push(o); });
     if (this.cargo?.root) this.cargo.root.traverse((o) => { if (o.isInstancedMesh && o !== this.cargo.root && o.geometry?.attributes?.aBrand) meshes.push(o); });
     if (!meshes.length) return null;
     const hits = this.raycaster.intersectObjects(meshes, false);
@@ -654,6 +672,14 @@ export class PortScene {
       const rec = this._recordFor(a, slot);
       if (rec.state === "aboard" && this._isRemoved(a.key, slot.id)) continue;
       return { container: rec, actor: a, id: a.id };
+    }
+    // Decorative yard / rail / truck inventory
+    if (inst != null && this._boxRecords) {
+      for (const rec of this._boxRecords.values()) {
+        if (rec.mesh === h.object && rec.inst === inst) {
+          return { container: rec, actor: this.actors.get(rec.ship), id: rec.shipId ?? null };
+        }
+      }
     }
     return null;
   }
@@ -756,6 +782,7 @@ export class PortScene {
     const cargoFrame = this.cargoSuspended ? null : this.cargo?.update(t);
     this._mergeManualDischarged();
     const liftCargo = this._tickLifts(dt);
+    this._syncHighlights();
     // cranes
     if (this.cranes.length) {
       const N = this.cranes.length;
@@ -948,21 +975,46 @@ export class PortScene {
     this.scene.add(this.liftLayer.root);
   }
 
+  _refreshCatalog() {
+    if (!this.task || !this.actors.size) return;
+    const prev = this._boxRecords;
+    this._boxRecords = buildContainerCatalog({
+      task: this.task, actors: this.actors, world: this.world, lay: this.lay,
+      cranes: this.cranes, fmt: this.fmt,
+    });
+    // Keep live discharge/load events across a rebuild (e.g. plan snap).
+    if (prev) for (const [id, rec] of this._boxRecords) {
+      const old = prev.get(id);
+      if (!old) continue;
+      rec.state = old.state;
+      rec.liveHistory = old.liveHistory || [];
+      rec.liveTimes = old.liveTimes || {};
+      rec.craneLabel = old.craneLabel;
+      rec.craneIndex = old.craneIndex;
+      rec.yard = rec.yard || old.yard;
+      rec.dest = old.dest;
+      rec.yardY = old.yardY;
+      rec._lastBox = old._lastBox;
+    }
+  }
+
   _recordFor(actor, slot) {
     const id = `${actor.key}:${slot.id}`;
     if (!this._boxRecords) this._boxRecords = new Map();
     let rec = this._boxRecords.get(id);
     if (!rec) {
+      this._refreshCatalog();
+      rec = this._boxRecords.get(id);
+    }
+    if (!rec) {
       rec = {
-        id,
-        ship: actor.key,
-        shipName: actor.ship?.name || actor.name || actor.key,
-        shipId: actor.id,
-        slot,
-        kind: "Container",
-        state: "aboard",
-        history: [`Loaded on ${actor.ship?.name || actor.key} (departure port)`],
-        craneLabel: "",
+        id, iso: id, ship: actor.key, shipName: actor.ship?.name || actor.name || actor.key,
+        shipId: actor.id, slot, kind: "Container", state: "aboard",
+        history: [], liveHistory: [], liveTimes: {}, craneLabel: "",
+        inbound: { vessel: actor.name, shipKey: actor.key, shipId: actor.id, call: actor.name },
+        origin: actor.ship?.from_port || "—", destination: "Dublin", booking: "BK00000",
+        size: { code: "45G1", name: "40' high-cube dry" }, weight: { tare: 3900, payload: 18000, gross: 21900 },
+        line: "—", commodity: "general cargo",
       };
       this._boxRecords.set(id, rec);
     }
@@ -1001,27 +1053,56 @@ export class PortScene {
   }
 
   _onContainerClick(rec, actor) {
+    this._selectContainer(rec, { fly: true, discharge: rec.state === "aboard" });
+  }
+
+  _onShipClick(actor) {
+    if (!this._boxRecords?.size) this._refreshCatalog();
+    const containers = [...this._boxRecords.values()].filter((r) => r.ship === actor.key);
+    this.selectedBox = null;
+    this.selectedShip = actor;
+    this._showShipPanel(actor, containers);
+    this._flyToActor(actor);
+  }
+
+  _selectBoxById(id, opts = {}) {
+    if (!id || !this._boxRecords) return;
+    const rec = this._boxRecords.get(id);
+    if (rec) this._selectContainer(rec, { fly: true, discharge: false, ...opts });
+  }
+
+  _selectShipByKey(key, opts = {}) {
+    const actor = this.actors.get(key);
+    if (actor) this._onShipClick(actor);
+  }
+
+  _selectContainer(rec, { fly = true, discharge = false, message = "" } = {}) {
+    if (!rec) return;
     this.selectedBox = rec;
-    if (rec.state === "aboard") {
+    this.selectedShip = rec.ship ? this.actors.get(rec.ship) : null;
+    const actor = this.selectedShip;
+    if (discharge && rec.state === "aboard") {
       const pose = actor?.pose;
       if (!pose || pose.phase !== "alongside") {
-        this._showBoxPanel(rec, "The ship is not alongside, so the gantries cannot reach this box.");
+        this._showBoxPanel(rec, message || "The ship is not alongside, so the gantries cannot reach this box.");
+        if (fly) this._flyToRecord(rec);
         return;
       }
       const blocked = stackAbove(actor.model.cargoSlots, rec.slot).filter((s) => !this._isRemoved(actor.key, s.id) && !(this.lifts || []).some((L) => L.rec.slot.id === s.id && L.rec.ship === actor.key));
       if (blocked.length) {
-        // Discharge the top box of this stack first so the clicked one is free next.
         const top = this._recordFor(actor, blocked[0]);
-        this.selectedBox = top;
         const err = this.startDischarge(top, actor);
-        this._showBoxPanel(top, err || "This box is under another. Discharging the one above it first.");
+        this._showBoxPanel(top, err || message || "This box is under another. Discharging the one above it first.");
+        if (fly) this._flyToRecord(top);
         return;
       }
       const err = this.startDischarge(rec, actor);
-      this._showBoxPanel(rec, err || "");
+      this._showBoxPanel(rec, err || message);
+      if (fly) this._flyToRecord(rec);
       return;
     }
-    this._showBoxPanel(rec);
+    this._showBoxPanel(rec, message);
+    if (fly) this._flyToRecord(rec);
   }
 
   startDischarge(rec, actor) {
@@ -1045,6 +1126,7 @@ export class PortScene {
     const craneIndex = assignCraneIndex(this.cranes, this.lifts, world.x);
     const craneNo = craneIndex + 1;
     rec.craneLabel = `crane ${craneNo}`;
+    rec.craneIndex = craneIndex;
     rec.state = "lifting";
     const when = formatSimClock(this.fmt, this.time);
     // History is appended when the spreader actually locks on (pickup), so the
@@ -1086,8 +1168,7 @@ export class PortScene {
     const craneNo = craneIndex + 1;
     rec.craneLabel = `crane ${craneNo}`;
     rec.state = "loading";
-    rec.history = rec.history || [];
-    rec.history.push(`load requested onto ${rec.shipName} at ${formatSimClock(this.fmt, this.time)}`);
+    this._liveEvent(rec, `load requested onto ${rec.shipName} at ${formatSimClock(this.fmt, this.time)}`);
     const lift = {
       rec, actor, job, dest, craneIndex, craneNo, mode: "load",
       active: true, arrived: true, elapsed: 0, t0: performance.now() / 1000,
@@ -1134,7 +1215,7 @@ export class PortScene {
       L.elapsed = performance.now() / 1000 - L.t0;
       const state = L.mode === "load" ? loadState(L.job, L.elapsed) : cargoState(L.job, L.elapsed);
       if (L.mode === "discharge" && L.eventPending && L.elapsed >= L.job.mark.pickup) {
-        L.rec.history.push(L.eventPending);
+        this._liveEvent(L.rec, L.eventPending);
         L.eventPending = null;
         L.rec.state = "lifting";
         this._showBoxPanel(L.rec);
@@ -1147,7 +1228,7 @@ export class PortScene {
           L.rec.dest = L.dest;
           L.rec.yardY = state.box.y;
           if (L.active && L.elapsed >= L.job.mark.stored) {
-            L.rec.history.push(`stacked in the yard at ${formatSimClock(this.fmt, this.time)}`);
+            this._liveEvent(L.rec, `stacked in the yard at ${formatSimClock(this.fmt, this.time)}`);
             L.active = false;
             this._showBoxPanel(L.rec);
           }
@@ -1156,12 +1237,13 @@ export class PortScene {
         if (state.owner === "ship" || L.elapsed >= L.job.duration) {
           L.rec.state = "aboard";
           this._markRemoved(L.rec.ship, L.rec.slot.id, false);
-          if (L.eventPending) { L.rec.history.push(L.eventPending); L.eventPending = null; }
+          if (L.eventPending) { this._liveEvent(L.rec, L.eventPending); L.eventPending = null; }
           L.active = false;
           this._showBoxPanel(L.rec);
         }
       }
       L.lastBox = state.box;
+      L.rec._lastBox = state.box;
       writeLiftVisual(this.liftLayer, i, L.rec, state);
       const working = L.mode === "load"
         ? (state.owner === "crane" || state.owner === "quay" && L.elapsed > 0)
@@ -1180,15 +1262,226 @@ export class PortScene {
     return cargoByCrane;
   }
 
+  _liveEvent(rec, text) {
+    rec.liveHistory = rec.liveHistory || [];
+    rec.liveTimes = rec.liveTimes || {};
+    rec.liveHistory.push(text);
+    rec.liveTimes[text] = this.time;
+    rec.history = rec.history || [];
+    rec.history.push(text);
+  }
+
   _showBoxPanel(rec, message = "") {
     this.selectedBox = rec;
+    if (!this._boxRecords?.size) this._refreshCatalog();
     const canLoad = rec.state === "yard" || rec.state === "quay";
-    this.boxPanel.innerHTML = renderBoxPanel(rec, { canLoad, message });
+    this.boxPanel.innerHTML = renderContainerPanel(rec, {
+      catalog: this._boxRecords, time: this.time, fmt: this.fmt, canLoad, message,
+    });
     this.boxPanel.hidden = false;
+    this._syncHighlights();
+  }
+
+  _showShipPanel(actor, containers) {
+    this.boxPanel.innerHTML = renderContainerPanel(null, {
+      shipList: {
+        name: actor.name,
+        call: actor.row ? `${this.task.quay} · section ${actor.row.section}` : (this.task?.quay || ""),
+        containers,
+      },
+      fmt: this.fmt,
+      time: this.time,
+    });
+    this.boxPanel.hidden = false;
+    this._syncHighlights(actor);
   }
 
   _closeBoxPanel() {
     this.boxPanel.hidden = true;
+    this.selectedBox = null;
+    this.selectedShip = null;
+    this._hideHighlights();
+  }
+
+  _flyToRecord(rec) {
+    if (!rec) return;
+    const p = recordWorldPos(rec, this.actors, new THREE.Vector3());
+    if (p) this._flyToWorld(p);
+  }
+
+  _flyToWorld(pos) {
+    const target = pos.clone ? pos.clone() : new THREE.Vector3(pos.x, pos.y || 8, pos.z);
+    target.y = Math.max(6, target.y);
+    // Stand on the apron so the selected box, its vessel and the yard slot stay in frame.
+    const cam = new THREE.Vector3(target.x - 70, target.y + 36, Math.min(-28, target.z - 95));
+    this.userMoved = true;
+    this._goto(cam, target, true);
+  }
+
+  _flyToActor(actor) {
+    const pose = actor?.pose;
+    if (!pose) return;
+    const target = new THREE.Vector3(pose.x, 10, pose.z);
+    const cam = new THREE.Vector3(pose.x - 90, 42, pose.z - 80);
+    this.userMoved = true;
+    this._goto(cam, target, true);
+  }
+
+  _flyToCrane(index) {
+    const c = this.cranes[index];
+    if (!c) return;
+    const x = c.st?.x ?? 0;
+    const target = new THREE.Vector3(x, 16, 8);
+    const cam = new THREE.Vector3(x - 55, 38, -50);
+    this.userMoved = true;
+    this._goto(cam, target, true);
+  }
+
+  _ensureHighlights() {
+    if (this._hl) return;
+    const g = new THREE.Group();
+    g.name = "container-highlights";
+    const unit = new THREE.BoxGeometry(1, 1, 1);
+    const edge = new THREE.EdgesGeometry(unit);
+    const gold = new THREE.LineBasicMaterial({ color: 0xffd056 });
+    const cyan = new THREE.LineBasicMaterial({ color: 0x4ad3ee });
+    const goldFill = new THREE.MeshBasicMaterial({ color: 0xe2b01a, transparent: true, opacity: 0.38, depthWrite: false, depthTest: true });
+    const cyanFill = new THREE.MeshBasicMaterial({ color: 0x2aa7c9, transparent: true, opacity: 0.28, depthWrite: false, depthTest: true });
+    this._hlBoxes = [];
+    for (let i = 0; i < 18; i++) {
+      const group = new THREE.Group();
+      const fill = new THREE.Mesh(unit, i === 0 ? goldFill : cyanFill);
+      const L = new THREE.LineSegments(edge, i === 0 ? gold : cyan);
+      fill.frustumCulled = false;
+      L.frustumCulled = false;
+      group.add(fill);
+      group.add(L);
+      group.visible = false;
+      g.add(group);
+      this._hlBoxes.push(group);
+    }
+    const pad = new THREE.Mesh(
+      new THREE.BoxGeometry(1, 1, 1),
+      new THREE.MeshBasicMaterial({ color: 0xe2b01a, transparent: true, opacity: 0.38, depthWrite: false }),
+    );
+    pad.visible = false;
+    pad.frustumCulled = false;
+    g.add(pad);
+    this._hlPad = pad;
+    const hullMat = new THREE.MeshBasicMaterial({ color: 0xe2b01a, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide });
+    const hull = new THREE.Mesh(new THREE.BoxGeometry(2, 0.4, 2), hullMat);
+    hull.visible = false;
+    hull.frustumCulled = false;
+    g.add(hull);
+    this._hlHull = hull;
+    const crane = new THREE.LineSegments(edge, gold);
+    crane.visible = false;
+    crane.frustumCulled = false;
+    g.add(crane);
+    this._hlCrane = crane;
+    this._hl = g;
+    this.scene.add(g);
+  }
+
+  _hideHighlights() {
+    if (!this._hl) return;
+    for (const L of this._hlBoxes) L.visible = false;
+    if (this._hlPad) this._hlPad.visible = false;
+    if (this._hlHull) this._hlHull.visible = false;
+    if (this._hlCrane) this._hlCrane.visible = false;
+  }
+
+  _placeBoxHighlight(line, pos, ry = 0, sx = BOX_L, sy = BOX_H, sz = BOX_W, scale = 1.08) {
+    if (!line || !pos) return;
+    line.visible = true;
+    line.position.set(pos.x, pos.y, pos.z);
+    line.rotation.set(0, ry || 0, 0);
+    line.scale.set(sx * scale, sy * scale, sz * scale);
+  }
+
+  _syncHighlights(shipOverride = null) {
+    if (!this.selectedBox && !this.selectedShip && !shipOverride) {
+      this._hideHighlights();
+      return;
+    }
+    this._ensureHighlights();
+    this._hideHighlights();
+    const rec = this.selectedBox;
+    const catalog = this._boxRecords || new Map();
+    let boxI = 0;
+    const markBox = (r, selected) => {
+      const p = recordWorldPos(r, this.actors, new THREE.Vector3());
+      if (!p) return;
+      const line = this._hlBoxes[selected ? 0 : (++boxI)];
+      if (!line) return;
+      const ry = r.item?.r || r._lastBox?.ry || (this.actors.get(r.ship)?.pose?.th ?? 0);
+      const sx = r.item?.s?.[0] || (r.slot && r.slot.w < 8 ? 6.06 : BOX_L);
+      this._placeBoxHighlight(line, p, ry, sx, BOX_H, r.item?.s?.[2] || BOX_W, selected ? 1.1 : 1.06);
+    };
+    if (rec) markBox(rec, true);
+    const rel = rec ? relatedItems(rec, catalog) : [];
+    for (const it of rel) {
+      if (it.kind !== "box") continue;
+      const other = catalog.get(it.recId);
+      if (other) markBox(other, false);
+    }
+    const actor = shipOverride || this.selectedShip || (rec && this.actors.get(rec.ship));
+    if (actor?.pose && actor.model) {
+      const pose = actor.pose;
+      this._hlHull.visible = true;
+      this._hlHull.position.set(pose.x, WATER_Y + 0.6, pose.z);
+      this._hlHull.rotation.set(0, pose.th || 0, 0);
+      this._hlHull.scale.set(actor.model.length / 2 + 8, 1, (actor.model.beam || actor.ship?.beam_m || 24) / 2 + 6);
+    }
+    const craneIndex = rec?.craneIndex ?? rec?.preferredCraneIndex;
+    const crane = craneIndex != null ? this.cranes[craneIndex] : null;
+    if (crane) {
+      const x = crane.st?.x ?? 0;
+      this._hlCrane.visible = true;
+      this._hlCrane.position.set(x, 18, this.lay?.craneLane ?? 0);
+      this._hlCrane.scale.set(8, 36, 28);
+    }
+    if (rec?.yard && rec.item?.p) {
+      const p = rec.item.p;
+      this._hlPad.visible = true;
+      this._hlPad.position.set(p[0], 0.12, p[2]);
+      this._hlPad.rotation.set(0, rec.item.r || 0, 0);
+      this._hlPad.scale.set((rec.item.s?.[0] || BOX_L) + 1.2, 0.16, (rec.item.s?.[2] || BOX_W) + 1.0);
+    }
+  }
+
+  /** Test helper: select a yard box, open the identity panel and frame the highlights. */
+  testSelectYardBox() {
+    if (!this._boxRecords?.size) this._refreshCatalog();
+    const alongside = new Set([...this.actors.values()].filter((a) => a.pose?.phase === "alongside").map((a) => a.key));
+    const recs = [...this._boxRecords.values()].filter((r) => r.state === "yard" && r.mesh);
+    const rec = recs.find((r) => alongside.has(r.ship)) || recs.find((r) => r.booking && r.ship) || recs[0];
+    if (!rec) return { ok: false, error: "no yard box" };
+    this._selectContainer(rec, { fly: true, discharge: false });
+    const rel = relatedItems(rec, this._boxRecords);
+    return {
+      ok: true, iso: rec.iso, booking: rec.booking, ship: rec.shipName, yard: rec.yard,
+      size: rec.size, line: rec.line, weight: rec.weight, origin: rec.origin, destination: rec.destination,
+      inbound: rec.inbound, outbound: rec.outbound,
+      related: rel.map((i) => ({ kind: i.kind, role: i.role, label: i.label, id: i.id })),
+      panel: this.boxPanel?.innerText?.slice(0, 1200) || "",
+    };
+  }
+
+  /** Test helper: from the current selection, follow a related box or vessel. */
+  testSelectRelated() {
+    const rec = this.selectedBox;
+    if (!rec) return { ok: false, error: "no selection" };
+    const rel = relatedItems(rec, this._boxRecords);
+    const mate = rel.find((i) => i.kind === "box") || rel.find((i) => i.kind === "vessel");
+    if (!mate) return { ok: false, error: "no related item", related: rel };
+    if (mate.kind === "box") this._selectContainer(this._boxRecords.get(mate.recId), { fly: true, discharge: false });
+    else this._selectShipByKey(mate.shipKey, { fly: true });
+    return {
+      ok: true, kind: mate.kind, role: mate.role, label: mate.label,
+      iso: this.selectedBox?.iso || null, ship: this.selectedShip?.name || this.selectedBox?.shipName,
+      panel: this.boxPanel?.innerText?.slice(0, 1200) || "",
+    };
   }
 
   /** Test helper: discharge a top-tier box on an alongside ship and frame the lift. */

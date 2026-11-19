@@ -406,6 +406,8 @@ export function containerMesh(items, { cast = true, receive = true } = {}) {
   g.setAttribute("aBrand", new THREE.InstancedBufferAttribute(brand, 1));
   g.setAttribute("aInk", new THREE.InstancedBufferAttribute(ink, 1));
   const mesh = instanced(g, containerMaterial(), items, { cast, receive });
+  mesh.userData.kind = "containers";
+  mesh.userData.items = items;
   return mesh;
 }
 

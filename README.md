@@ -20,7 +20,8 @@ Repo: [Ricksocial2908/dublin-portsim](https://github.com/Ricksocial2908/dublin-p
 - Sites: **50N** (DFT, official 50A 170 m + 50N 370 m face), **MTL** (combined berths 41–45, ~619 m OSM quay), plus **51** (RoRo), **32** (Ocean Pier) and **OB** (oil) for the 3D harbour.
 - Tasks (single-quay weeks, like the original): `dub-dft-w12-busy-0`, `dub-mtl-poolbeg-0`, `dub-oil-tide-0`. Call lists are synthetic (see assumptions below); berth lengths, depths and tides are from official notices.
 - Play runs the same tools in-page (Vercel cannot host the original `/ws` OpenEnv session). Explorer check / submit already ran client-side in the original.
-- Click a container on an alongside ship and the nearest STS crane discharges it in real time (trolley, spreader, quay handoff, optional truck to a yard slot). The box history records `discharged by crane N at <sim time>`. Yard or quay boxes still open the detail panel, with an optional **Load onto ship** reverse move.
+- Click a container on an alongside ship and the nearest STS crane discharges it in real time (trolley, spreader, quay handoff, optional truck to a yard slot). The box history records `discharged by crane N at <sim time>`.
+- Every container (shipboard or yard) has a deterministic ISO 6346 identity with a valid check digit, size/type, weight, line, origin/destination, inbound and outbound berth calls, yard or stowage address, and a simulated history that follows the berth-chart clock. The panel lists clickable related objects (vessel, crane, yard slot, same booking); those, and the selected box, are highlighted in 3D and the camera flies to them. Clicking a ship lists its containers.
 
 ## Attribution
 

@@ -858,9 +858,11 @@ def build_routes(tf, frame, sites, routes_extra):
     sea = list(xy(tf, frame, -6.12, 53.335))
     mouth_out = list(xy(tf, frame, -6.146, 53.342))  # just outside Poolbeg / entrance
     mouth_in = list(xy(tf, frame, -6.175, 53.3445))  # inside the walls
+    # Waiting line runs north-south in the bay (parallel to the coast) so
+    # overflow grows east into open water, not south onto the Great South Wall.
     anch = {
-        "centre": list(xy(tf, frame, -6.13, 53.338)),
-        "along": [0.95, -0.3],
+        "centre": list(xy(tf, frame, -6.125, 53.338)),
+        "along": [0.12, 0.993],
         "half": [1200.0, 700.0],
     }
     # cruise along Ocean Pier / south wall if we have site 32, else Terminal 5 face

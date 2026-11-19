@@ -13,7 +13,7 @@ export function sceneMarkup() {
     <div class="ov ov-tr">
       <button type="button" class="ovb" data-act="focus" hidden title="Move the camera to the selected ship">Focus</button>
       <button type="button" class="ovb" data-act="cargo" title="Watch the next container transfer at 10× real time">Cargo</button>
-      <select class="ovs" data-act="light" aria-label="Scene lighting" title="Presentation lighting, independent of the simulation clock"><option value="afternoon">Mediterranean</option><option value="golden">Golden hour</option></select>
+      <select class="ovs" data-act="light" aria-label="Scene lighting" title="Presentation lighting, independent of the simulation clock"><option value="afternoon">Dublin afternoon</option><option value="golden">Golden hour</option></select>
       <select class="ovs" data-act="view" aria-label="Camera view"><option value="overview">Overview</option><option value="harbour">Harbour</option><option value="quayside">Quayside</option><option value="overhead">Overhead</option></select>
       <button type="button" class="ovb" data-act="names" aria-pressed="true" title="Show ship names in the scene">Names</button>
       <button type="button" class="ovb" data-act="reset" title="Back to the overview">Reset</button>

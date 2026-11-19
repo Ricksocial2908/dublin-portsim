@@ -221,23 +221,63 @@ function travel(path, phase, { speed = 3, th = null, reverse = false, tugs = fal
   return { kind: 'path', path, duration: Math.max(0.015, 1.5 * path.length / (speed * 3600)), phase, th, reverse, tugs, lateral };
 }
 
-export function vesselRoute(lay, v, anchor) {
+export function vesselRoute(lay, v, anchor, opts = {}) {
   const R = lay.routes, ms = R.mouthSide, th = ms > 0 ? Math.PI : 0;
-  // APM's opposite quay has moored cruise ships projecting into the basin.
-  // Keep the full cargo-ship/escort envelope on the container-terminal side.
-  const lane = isAPM(lay.quay) ? Math.min(R.lane, 170) : R.lane;
-  const via = lay.quay === "36A" ? [lay.toLocal(620, -1120)] : R.via;
+  // APM's opposite quay (Barcelona 24B, Dublin 32) has moored cruise ships
+  // projecting into the basin. Elsewhere use the site's mid-channel lane so a
+  // long hull does not yaw into the bank at a dog-leg.
+  let lane = opts.lane ?? R.lane;
+  if (opts.lane == null && lay.cruise && isAPM(lay.quay)) lane = Math.min(lane, 170);
+  if (opts.lane == null && R.entry && Math.abs((R.entry[1] ?? lane) - lane) < 140) lane = R.entry[1];
+  const via = opts.via ?? (lay.quay === "36A" ? [lay.toLocal(620, -1120)] : R.via);
+  const radius = opts.radius ?? Math.max(150, v.len * 0.7);
   // Approach parallel to the quay. No 180-degree pivot beside occupied berths.
   const gate = [R.entry[0], lane];
   const end = [v.x, lane];
-  const sea = routePath([[anchor.x, anchor.z], ...anchor.exit, R.sea, R.mouthOut, R.mouthIn, ...via, R.entry, gate, [v.x + ms * Math.min(v.len, Math.abs(gate[0] - v.x) * 0.5), lane], end], Math.max(150, v.len * 0.7));
+  const sea = routePath([[anchor.x, anchor.z], ...anchor.exit, R.sea, R.mouthOut, R.mouthIn, ...via, R.entry, gate, [v.x + ms * Math.min(v.len, Math.abs(gate[0] - v.x) * 0.5), lane], end], radius);
   const slide = routePath([end, [v.x, v.zMoor]]);
   const back = routePath([end, gate, R.entry], 100);
-  const exit = routePath([R.entry, ...[...via].reverse(), R.mouthIn, R.mouthOut, R.sea], Math.max(150, v.len * 0.7));
+  const exit = routePath([R.entry, ...[...via].reverse(), R.mouthIn, R.mouthOut, R.sea], radius);
   const inSegs = [travel(sea, 'berthing', { speed: 3.2 }), travel(slide, 'berthing', { speed: 0.45, th, tugs: true, lateral: true })];
-  const outSegs = [travel(routePath([[v.x, v.zMoor], end]), 'departing', { speed: 0.45, th, tugs: true, lateral: true }), travel(back, 'departing', { speed: 1.4, th, reverse: true, tugs: true }), { kind: 'turn', duration: 0.14, x: R.entry[0], z: R.entry[1], th0: th, th1: onPath(exit, 0).th, phase: 'departing', tugs: true }, travel(exit, 'departing', { speed: 3.2 })];
+  const outSegs = [travel(routePath([[v.x, v.zMoor], end]), 'departing', { speed: 0.45, th, tugs: true, lateral: true }), travel(back, 'departing', { speed: 1.4, th, reverse: true, tugs: true }), { kind: 'turn', duration: 0.14, x: R.entry[0], z: lane, th0: th, th1: onPath(exit, 0).th, phase: 'departing', tugs: true }, travel(exit, 'departing', { speed: 3.2 })];
   for (const segment of [...inSegs, ...outSegs]) segment.tugSide = ms > 0 ? -1 : 1;
   return { inSegs, outSegs, th, inDuration: inSegs.reduce((s, x) => s + x.duration, 0), outDuration: outSegs.reduce((s, x) => s + x.duration, 0) };
+}
+
+function routeHitsLand(route, v, mask, fixed, preMoored = false) {
+  const underway = preMoored ? stamp(route.outSegs, 0) : [...stamp(route.inSegs, 0), ...stamp(route.outSegs, route.inDuration)];
+  for (const s of underway) {
+    const unsafe = t => trafficBodies(poseAt({ segs: [s] }, t), v).some(body => (mask && !mask.fits(body, body)) || fixed.some(obstacle => hullsOverlap(body, body, obstacle, obstacle)));
+    for (let t = s.t0; t < s.t1; t += clearanceStep(s, v, t)) if (unsafe(t)) return true;
+    if (unsafe(s.t1 - 1e-8)) return true;
+  }
+  return false;
+}
+
+function routeThatClears(lay, v, anchor, mask, fixed) {
+  const R = lay.routes;
+  const base = R.entry?.[1] ?? R.lane ?? 200;
+  const tries = [
+    {},
+    { lane: base },
+    { lane: base, radius: Math.max(80, v.len * 0.4) },
+    { lane: base - 40 },
+    { lane: base + 40 },
+    { lane: base - 70 },
+    { lane: base + 70 },
+    { lane: 160 },
+    { lane: 200 },
+    { lane: 240 },
+    { lane: 280 },
+    { lane: 140, radius: 80 },
+  ];
+  let first = null;
+  for (const opts of tries) {
+    const route = vesselRoute(lay, v, anchor, opts);
+    if (!first) first = route;
+    if (!routeHitsLand(route, v, mask, fixed, !!v.preMoored)) return route;
+  }
+  return first;
 }
 
 function stamp(parts, start) {
@@ -299,7 +339,7 @@ export function buildTraffic(lay, vessels, task, horizon, mask = null) {
     : waiting(v, v.reason));
   for (const v of order) {
     if (v.reason || v.berth == null) { schedules.set(v.key, waiting(v, v.reason)); continue; }
-    const anchor = slots.get(v.key), route = vesselRoute(lay, v, anchor);
+    const anchor = slots.get(v.key), route = routeThatClears(lay, v, anchor, mask, fixed);
     const windows = noMoveWindows(task, { length_m: v.len });
     let dock = v.berth, result = null, departureWait = 0;
     let reason = '';
@@ -327,16 +367,9 @@ export function buildTraffic(lay, vessels, task, horizon, mask = null) {
       const candidate = { segs, visualBerth: dock, visualDep: dep, delay: dock - v.berth, reason: '' };
       if (attempt === 0) {
         // Check swept hull against the actual mapped land, not just its centre point.
-        const underway = v.preMoored ? stamp(route.outSegs, 0) : [...stamp(route.inSegs, 0), ...stamp(route.outSegs, route.inDuration)];
-        for (const s of underway) {
-          const safe = t => trafficBodies(poseAt({ segs: [s] }, t), v).every(body => (!mask || mask.fits(body, body)) && !fixed.some(obstacle => hullsOverlap(body, body, obstacle, obstacle)));
-          for (let t = s.t0; t < s.t1; t += clearanceStep(s, v, t)) {
-            if (!safe(t)) { reason = 'route clearance'; break; }
-          }
-          if (!safe(s.t1 - 1e-8)) reason = 'route clearance';
-          if (reason) break;
-        }
-        if (reason) {
+        // routeThatClears already retried mid-channel lanes; if it still clips, give up.
+        if (routeHitsLand(route, v, mask, fixed, !!v.preMoored)) {
+          reason = 'route clearance';
           if (v.preMoored) result = heldAlongside(v, route, reason);
           break;
         }

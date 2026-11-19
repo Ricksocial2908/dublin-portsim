@@ -9,10 +9,10 @@ export const WATER_Y = -3;
 // geographic sun in the sky, reflection, environment map and directional shadows.
 export const ATMOSPHERES = {
   afternoon: {
-    label: "Mediterranean", az: 165, el: 36,
-    sky: { zenith: "#2369AC", mid: "#77B1D0", horizon: "#C5D8DC", below: "#8AA8B8" },
-    haze: "#B5CDD5", sun: "#FFF0D5", sunIntensity: 3.1, hemi: 0.28, environment: 0.48,
-    exposure: 0.96, fog: 0.000046, water: "#125467",
+    label: "Dublin afternoon", az: 220, el: 28,
+    sky: { zenith: "#2A5E90", mid: "#7FA6BE", horizon: "#C9D0D3", below: "#7E949E" },
+    haze: "#B7C4C8", sun: "#FFF3DF", sunIntensity: 2.7, hemi: 0.34, environment: 0.5,
+    exposure: 0.98, fog: 0.000055, water: "#1A4E5C",
   },
   golden: {
     label: "Golden hour", az: 184, el: 18,
