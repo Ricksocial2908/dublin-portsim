@@ -238,7 +238,13 @@ export function vesselRoute(lay, v, anchor, opts = {}) {
   const slide = routePath([end, [v.x, v.zMoor]]);
   const back = routePath([end, gate, R.entry], 100);
   const exit = routePath([R.entry, ...[...via].reverse(), R.mouthIn, R.mouthOut, R.sea], radius);
-  const inSegs = [travel(sea, 'berthing', { speed: 3.2 }), travel(slide, 'berthing', { speed: 0.45, th, tugs: true, lateral: true })];
+  // Arrive already parallel to the fender line; the lateral slide keeps this heading.
+  const arriveTh = onPath(sea, 1).th;
+  const yawIn = Math.atan2(Math.sin(th - arriveTh), Math.cos(th - arriveTh));
+  const turnIn = Math.abs(yawIn) > 0.05
+    ? [{ kind: 'turn', duration: Math.max(0.06, 0.12 * Math.abs(yawIn) / Math.PI), x: end[0], z: lane, th0: arriveTh, th1: th, phase: 'berthing', tugs: true }]
+    : [];
+  const inSegs = [travel(sea, 'berthing', { speed: 3.2 }), ...turnIn, travel(slide, 'berthing', { speed: 0.45, th, tugs: true, lateral: true })];
   const outSegs = [travel(routePath([[v.x, v.zMoor], end]), 'departing', { speed: 0.45, th, tugs: true, lateral: true }), travel(back, 'departing', { speed: 1.4, th, reverse: true, tugs: true }), { kind: 'turn', duration: 0.14, x: R.entry[0], z: lane, th0: th, th1: onPath(exit, 0).th, phase: 'departing', tugs: true }, travel(exit, 'departing', { speed: 3.2 })];
   for (const segment of [...inSegs, ...outSegs]) segment.tugSide = ms > 0 ? -1 : 1;
   return { inSegs, outSegs, th, inDuration: inSegs.reduce((s, x) => s + x.duration, 0), outDuration: outSegs.reduce((s, x) => s + x.duration, 0) };

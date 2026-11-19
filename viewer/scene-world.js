@@ -137,6 +137,69 @@ function addPolygon(g, poly, T, y, col) {
   }
 }
 
+/** Along/across a quay face in twin metres: +across is the water side. */
+function alongQuay(site, X, Y) {
+  const dx = site.ne[0] - site.sw[0], dy = site.ne[1] - site.sw[1];
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len, uy = dy / len;
+  const ax = X - site.sw[0], ay = Y - site.sw[1];
+  return { along: ax * ux + ay * uy, across: ax * uy - ay * ux, len };
+}
+
+/** Ground-level pavement that sits in a berth pocket or on open water. Bridges that
+ *  actually reach land are kept, so the river crossings stay visible. */
+function roadPointWet(twin, X, Y) {
+  let inland = false, pocket = false;
+  for (const site of Object.values(twin.sites || {})) {
+    const { along, across, len } = alongQuay(site, X, Y);
+    if (along > -80 && along < len + 80) {
+      if (across > 2 && across < 800) pocket = true;
+      if (across <= 2) inland = true;
+    }
+  }
+  if (pocket) return true;
+  if (inland) return false;
+  return terrainAt(twin, X, Y) < -0.35;
+}
+
+function roadHasLandEnd(twin, raw) {
+  if (!raw.length) return false;
+  return !roadPointWet(twin, ...raw[0]) || !roadPointWet(twin, ...raw[raw.length - 1]);
+}
+
+function mix2(a, b, u) {
+  return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u];
+}
+
+/** Split a centreline at the land/water boundary so ribbons stop at the face. */
+function clipRoadLine(raw, wet) {
+  if (raw.length < 2) return [];
+  const flag = raw.map((p) => wet(p[0], p[1]));
+  const parts = [];
+  let cur = [];
+  const push = (p) => {
+    if (!cur.length || Math.hypot(cur.at(-1)[0] - p[0], cur.at(-1)[1] - p[1]) > 0.05) cur.push(p);
+  };
+  const flush = () => { if (cur.length >= 2) parts.push(cur); cur = []; };
+  const shore = (a, b) => {
+    let lo = 0, hi = 1, aWet = wet(a[0], a[1]);
+    for (let k = 0; k < 12; k++) {
+      const mid = (lo + hi) / 2, p = mix2(a, b, mid);
+      if (wet(p[0], p[1]) === aWet) lo = mid; else hi = mid;
+    }
+    return mix2(a, b, (lo + hi) / 2);
+  };
+  for (let i = 0; i + 1 < raw.length; i++) {
+    const a = raw[i], b = raw[i + 1], wa = flag[i], wb = flag[i + 1];
+    if (!wa && !wb) push(a);
+    else if (!wa && wb) { push(a); push(shore(a, b)); flush(); }
+    else if (wa && !wb) { flush(); push(shore(a, b)); }
+  }
+  if (!flag[flag.length - 1]) push(raw[raw.length - 1]);
+  flush();
+  return parts;
+}
+
 /** Mapped roads draped over the terrain, with kerbs, lane markings and bridge decks. */
 function buildRoads(lay, twin, lite) {
   const g = new Geo();
@@ -147,14 +210,20 @@ function buildRoads(lay, twin, lite) {
     const [w, layer] = rd;
     const raw = [];
     for (let i = 2; i < rd.length; i += 2) raw.push([rd[i], rd[i + 1]]);
+    if (raw.length < 2) continue;
     const centre = raw[Math.floor(raw.length / 2)];
     const local = lay.toLocal(...centre);
     const dist = Math.hypot(local[0], local[1]);
     if (dist > (lite ? 3800 : 7500)) continue; // the atlas retains distant streets
+    // Ground roads (and "bridges" that never reach land) are clipped off the
+    // water, the punched fairway and the berth pocket so they cannot wrap a hull.
+    const keepBridge = layer && roadHasLandEnd(twin, raw);
+    const lines = keepBridge ? [raw] : clipRoadLine(raw, (X, Y) => roadPointWet(twin, X, Y));
+    for (const line of lines) {
     const pts = [];
     let along = 0;
-    for (let i = 0; i + 1 < raw.length; i++) {
-      const a = raw[i], b = raw[i + 1];
+    for (let i = 0; i + 1 < line.length; i++) {
+      const a = line[i], b = line[i + 1];
       const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
       const count = Math.max(1, Math.ceil(len / (lite ? 18 : 9)));
       for (let k = 0; k < count; k++) {
@@ -163,10 +232,10 @@ function buildRoads(lay, twin, lite) {
       }
       along += len;
     }
-    pts.push([...raw[raw.length - 1], along]);
+    pts.push([...line[line.length - 1], along]);
     // Elevated segments interpolate their deck height and do not dive into ravines.
-    const bridgeY0 = ground(...raw[0]) + 7.5;
-    const bridgeY1 = ground(...raw[raw.length - 1]) + 7.5;
+    const bridgeY0 = ground(...line[0]) + 7.5;
+    const bridgeY1 = ground(...line[line.length - 1]) + 7.5;
     for (let i = 0; i + 1 < pts.length; i++) {
       const a = pts[i], b = pts[i + 1];
       const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
@@ -198,6 +267,7 @@ function buildRoads(lay, twin, lite) {
           if (h > 0) piers.cyl(P[0], floor + h / 2, P[2], 1, h, "#ACADA5", 6);
         }
       }
+    }
     }
   }
   const mesh = new THREE.Mesh(g.build(), new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.96, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -1 }));
@@ -634,6 +704,7 @@ function railTracks(lay, twin, zMin, zMax, root, r) {
       const [bx, bz] = pts[i + 1];
       const L = Math.hypot(bx - ax, bz - az);
       if (L < 0.5) continue;
+      if (az > 2 && bz > 2) continue; // not over the berth pocket
       const ang = Math.atan2(-(bz - az), bx - ax);
       p.box((ax + bx) / 2, 0.08, (az + bz) / 2, L, 0.12, 2.6, "#6F675C", ang);
       for (const o of [-0.72, 0.72]) {
